@@ -148,16 +148,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [requisitions, setRequisitions] = useState<Requisition[]>(INITIAL_REQUISITIONS);
   const [pettyCashFund, setPettyCashFund] = useState<PettyCashFund>(INITIAL_PETTY_CASH_FUND);
 
-  // Current logged in user (default: Almaz - Staff)
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+  // Current logged in user (starts from login screen every time)
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  // Clear any persistent storage so system starts fresh at login
+  useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_USER) || localStorage.getItem('kurtta_pc_user_v2');
-      if (saved) return sanitizeUser(JSON.parse(saved));
-      return INITIAL_USERS[0];
+      localStorage.removeItem(STORAGE_KEY_USER);
+      localStorage.removeItem('kurtta_pc_user_v2');
+      localStorage.removeItem('kurtta_pc_user_v1');
     } catch {
-      return INITIAL_USERS[0];
+      // ignore
     }
-  });
+  }, []);
 
   // Role permissions
   const isManagerOrFinance = useMemo(() => {
@@ -207,17 +210,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser]);
 
-  // Save current user session
+  // Ensure clean session per load
   useEffect(() => {
-    try {
-      if (currentUser) {
-        localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
-      } else {
-        localStorage.removeItem(STORAGE_KEY_USER);
-      }
-    } catch (e) {
-      console.warn('Storage save error', e);
-    }
+    // No automatic persistence so system starts from login every time
   }, [currentUser]);
 
   // Modals & Filters
