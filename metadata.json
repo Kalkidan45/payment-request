@@ -1,0 +1,6 @@
+{
+  "name": "Kurtta Kids Clothes - Petty Cash System",
+  "description": "Petty cash payment requisition, multi-level role approval, live expense tracking, and monthly Birr expenditure reports for Kurtta Kids Clothes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

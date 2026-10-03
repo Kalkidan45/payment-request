@@ -1,0 +1,30 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return true; // Web prototype with company auth
+    }
+
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /requisitions/{requisitionId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /pettyCashFund/{fundId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

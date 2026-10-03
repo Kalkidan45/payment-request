@@ -1,0 +1,82 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Registered company employee or manager with role-based access",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "password": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["requester", "store_manager", "finance_officer", "general_manager"] },
+        "roleTitle": { "type": "string" },
+        "department": { "type": "string" },
+        "branch": { "type": "string" },
+        "phone": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "dailyLimit": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "username", "name", "role", "branch"]
+    },
+    "Requisition": {
+      "title": "Requisition",
+      "description": "Petty cash payment requisition voucher",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "voucherNumber": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "amount": { "type": "number" },
+        "branch": { "type": "string" },
+        "payee": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "paymentReference": { "type": "string" },
+        "description": { "type": "string" },
+        "urgency": { "type": "string", "enum": ["Normal", "Urgent", "Emergency"] },
+        "status": { "type": "string", "enum": ["pending_manager", "pending_finance", "approved", "disbursed", "rejected"] },
+        "requesterId": { "type": "string" },
+        "requesterName": { "type": "string" },
+        "requesterRole": { "type": "string" },
+        "requesterPhone": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "receiptUrl": { "type": "string" },
+        "receiptName": { "type": "string" },
+        "rejectionReason": { "type": "string" }
+      },
+      "required": ["id", "voucherNumber", "title", "category", "amount", "branch", "payee", "status", "requesterId"]
+    },
+    "PettyCashFund": {
+      "title": "PettyCashFund",
+      "description": "Store petty cash safe box balance and replenishment float",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "totalAllocated": { "type": "number" },
+        "currentBalance": { "type": "number" },
+        "monthAllocated": { "type": "number" },
+        "lastReplenishedDate": { "type": "string" },
+        "lastReplenishedAmount": { "type": "number" }
+      },
+      "required": ["id", "totalAllocated", "currentBalance"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Company personnel registered by managers"
+    },
+    "/requisitions/{requisitionId}": {
+      "schema": { "$ref": "#/entities/Requisition" },
+      "description": "Petty cash payment vouchers"
+    },
+    "/pettyCashFund/{fundId}": {
+      "schema": { "$ref": "#/entities/PettyCashFund" },
+      "description": "Global and branch petty cash float accounts"
+    }
+  }
+}
