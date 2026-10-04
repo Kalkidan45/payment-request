@@ -19,10 +19,11 @@ export type BranchLocation =
   | 'Head Office / Warehouse';
 
 export type RequisitionStatus =
-  | 'pending_gm' // Awaiting General Manager's Approval
-  | 'approved' // Approved by General Manager (Required for Finance to disburse)
-  | 'disbursed' // Disbursed by Finance Custodian
-  | 'rejected';
+  | 'pending_finance' // Stage 1: Submitted by Staff, awaiting Finance Check & Verification
+  | 'pending_gm' // Stage 2: Checked by Finance, awaiting General Manager Approval
+  | 'approved' // Stage 3: Approved by GM, returned to Finance for Payment
+  | 'disbursed' // Stage 4: Paid & Disbursed by Finance
+  | 'rejected'; // Declined by Finance or General Manager
 
 export type PaymentMethod = 'Physical Cash' | 'Telebirr' | 'CBE Birr' | 'Amole / Awash';
 
@@ -46,7 +47,7 @@ export interface ApprovalStep {
   userId: string;
   userName: string;
   userRole: Role;
-  action: 'submitted' | 'approved' | 'disbursed' | 'rejected';
+  action: 'submitted' | 'verified_by_finance' | 'approved_by_gm' | 'disbursed' | 'rejected';
   comment?: string;
   timestamp: string;
 }

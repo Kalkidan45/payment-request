@@ -1,34 +1,36 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { formatBirr, formatDate, getStatusDisplay, getRoleDisplay } from '../utils/format';
+import { formatBirr, formatDate, getStatusDisplay } from '../utils/format';
 import { CATEGORY_DETAILS } from '../data/mockData';
 import {
   Search,
-  Filter,
+  SlidersHorizontal,
   Plus,
-  Receipt,
   Eye,
   Check,
   Coins,
-  ChevronRight,
-  SlidersHorizontal,
-  X,
-  FileCheck,
+  Send,
+  Clock,
   Lock,
+  ChevronRight,
+  Receipt,
+  FileCheck,
+  CheckCircle,
+  X,
 } from 'lucide-react';
-import { Requisition, ExpenseCategory, BranchLocation } from '../types';
+import { RequisitionStatus } from '../types';
 
 export const RequisitionList: React.FC = () => {
   const {
     requisitions,
-    currentUser,
     filterStatus,
     setFilterStatus,
     searchQuery,
     setSearchQuery,
+    currentUser,
     setSelectedRequisition,
     setIsNewReqModalOpen,
-    endorseRequisition,
+    verifyRequisition,
     approveRequisition,
     disburseRequisition,
   } = useApp();
@@ -43,7 +45,7 @@ export const RequisitionList: React.FC = () => {
       // Status filter
       if (filterStatus !== 'all') {
         if (filterStatus === 'pending') {
-          if (r.status !== 'pending_gm') {
+          if (r.status !== 'pending_finance' && r.status !== 'pending_gm') {
             return false;
           }
         } else if (r.status !== filterStatus) {
@@ -85,7 +87,7 @@ export const RequisitionList: React.FC = () => {
         <div>
           <h1 className="text-xl font-bold text-stone-900">Petty Cash Requisitions</h1>
           <p className="text-xs text-stone-500 mt-0.5">
-            Track, approve, and disburse store vouchers across all branches
+            4-Stage Control: Staff Request ➔ Finance Check ➔ GM Approval ➔ Finance Payment
           </p>
         </div>
 
@@ -182,52 +184,82 @@ export const RequisitionList: React.FC = () => {
               className="w-full py-2 px-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs text-stone-800"
             >
               <option value="all">All Branches</option>
-              <option value="Bole Medhanialem Flagship">Bole Branch</option>
+              <option value="Bole Medhanialem Flagship">Bole Medhanialem</option>
               <option value="Piassa Kids Corner">Piassa Corner</option>
-              <option value="Kazanchis Atelier">Kazanchis Workshop</option>
+              <option value="Kazanchis Atelier">Kazanchis Atelier</option>
+              <option value="CMC Kids Boutique">CMC Boutique</option>
               <option value="Head Office / Warehouse">Head Office</option>
             </select>
           </div>
         )}
 
-        {/* Segmented Status Filter Tabs (Anti-slop zero-pill clean button controls) */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar pt-1 border-t border-stone-100">
-          {(
-            [
-              { id: 'all', label: 'All Vouchers' },
-              { id: 'pending', label: 'Pending Approval' },
-              { id: 'approved', label: 'Approved for Payout' },
-              { id: 'disbursed', label: 'Disbursed (Paid)' },
-              { id: 'rejected', label: 'Declined' },
-            ] as const
-          ).map((tab) => {
-            const isActive = filterStatus === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setFilterStatus(tab.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                  isActive
-                    ? 'bg-stone-900 text-white'
-                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
+        {/* Status Filter Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-t border-stone-100 pt-3 text-xs scrollbar-none">
+          <button
+            onClick={() => setFilterStatus('all')}
+            className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+              filterStatus === 'all'
+                ? 'bg-stone-900 text-white'
+                : 'text-stone-600 hover:bg-stone-100'
+            }`}
+          >
+            All Vouchers ({requisitions.length})
+          </button>
+          <button
+            onClick={() => setFilterStatus('pending')}
+            className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+              filterStatus === 'pending'
+                ? 'bg-amber-600 text-white'
+                : 'text-stone-600 hover:bg-stone-100'
+            }`}
+          >
+            In Pipeline (
+            {requisitions.filter((r) => r.status === 'pending_finance' || r.status === 'pending_gm').length}
+            )
+          </button>
+          <button
+            onClick={() => setFilterStatus('approved')}
+            className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+              filterStatus === 'approved'
+                ? 'bg-emerald-600 text-white'
+                : 'text-stone-600 hover:bg-stone-100'
+            }`}
+          >
+            Ready for Payment ({requisitions.filter((r) => r.status === 'approved').length})
+          </button>
+          <button
+            onClick={() => setFilterStatus('disbursed')}
+            className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+              filterStatus === 'disbursed'
+                ? 'bg-[#00AEEF] text-white'
+                : 'text-stone-600 hover:bg-stone-100'
+            }`}
+          >
+            Paid & Disbursed ({requisitions.filter((r) => r.status === 'disbursed').length})
+          </button>
+          <button
+            onClick={() => setFilterStatus('rejected')}
+            className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+              filterStatus === 'rejected'
+                ? 'bg-rose-600 text-white'
+                : 'text-stone-600 hover:bg-stone-100'
+            }`}
+          >
+            Declined ({requisitions.filter((r) => r.status === 'rejected').length})
+          </button>
         </div>
       </div>
 
-      {/* Requisitions List: Responsive for Mobile Cards & Clean Desktop Rows */}
+      {/* Requisitions List Table/Cards */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
         {filteredRequisitions.length === 0 ? (
-          <div className="p-12 text-center">
-            <Receipt className="w-12 h-12 text-stone-300 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-stone-800">No requisitions found</h3>
-            <p className="text-xs text-stone-500 max-w-sm mx-auto mt-1">
-              Try adjusting your search criteria, category filters, or submit a new petty cash
-              payment request.
+          <div className="text-center py-12 px-4">
+            <div className="w-12 h-12 rounded-2xl bg-stone-100 text-stone-400 flex items-center justify-center mx-auto mb-3">
+              <Receipt className="w-6 h-6" />
+            </div>
+            <h3 className="text-sm font-bold text-stone-900">No requisitions found</h3>
+            <p className="text-xs text-stone-500 mt-1 max-w-sm mx-auto">
+              There are no petty cash vouchers matching your active filters.
             </p>
           </div>
         ) : (
@@ -240,19 +272,17 @@ export const RequisitionList: React.FC = () => {
                 <div
                   key={req.id}
                   onClick={() => setSelectedRequisition(req)}
-                  className="p-4 hover:bg-stone-50 transition-colors cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-3"
+                  className="p-3.5 sm:p-4 hover:bg-stone-50/80 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3 cursor-pointer group"
                 >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                        cat ? cat.bg : 'bg-stone-100'
-                      }`}
-                    >
-                      <Receipt className={`w-5 h-5 ${cat ? cat.color : 'text-stone-700'}`} />
+                  {/* Left side: Voucher ID, Title & Metadata */}
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-stone-100 text-stone-700 flex items-center justify-center font-mono font-bold text-xs shrink-0 group-hover:bg-sky-50 group-hover:text-[#0284C7] transition-colors">
+                      <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-amber-900">
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-xs font-extrabold text-stone-900">
                           {req.voucherNumber}
                         </span>
                         <span
@@ -261,21 +291,19 @@ export const RequisitionList: React.FC = () => {
                           <span className={`w-1.5 h-1.5 rounded-full ${status.dotColor}`}></span>
                           {status.label}
                         </span>
-                        {req.urgency !== 'Normal' && (
-                          <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200">
-                            {req.urgency}
-                          </span>
-                        )}
+                        <span className="text-[11px] text-stone-500 hidden sm:inline">
+                          · {req.branch}
+                        </span>
                       </div>
 
-                      <h3 className="text-sm font-semibold text-stone-900 mt-1 line-clamp-1">
+                      <h4 className="text-xs sm:text-sm font-semibold text-stone-800 mt-1 truncate">
                         {req.title}
-                      </h3>
+                      </h4>
 
-                      <div className="text-xs text-stone-500 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                        <span>Requester: {req.requesterName}</span>
-                        <span>·</span>
-                        <span>{req.branch}</span>
+                      <div className="flex items-center gap-2 mt-1 text-[11px] text-stone-500 flex-wrap">
+                        <span className="font-medium text-stone-600">
+                          By: {req.requesterName} ({req.requesterRole})
+                        </span>
                         <span>·</span>
                         <span>Payee: {req.payee}</span>
                         <span>·</span>
@@ -284,7 +312,7 @@ export const RequisitionList: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Right side: Amount + Quick Approval Actions */}
+                  {/* Right side: Amount + Quick Pipeline Actions */}
                   <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center border-t md:border-t-0 pt-2.5 md:pt-0 border-stone-100 gap-2">
                     <div className="text-left md:text-right">
                       <div className="text-base font-extrabold text-stone-900 font-mono">
@@ -298,49 +326,94 @@ export const RequisitionList: React.FC = () => {
 
                     {/* Quick Action buttons based on Role */}
                     <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                      {/* General Manager: SOLE APPROVAL AUTHORITY */}
-                      {currentUser?.role === 'general_manager' &&
-                        req.status !== 'approved' &&
-                        req.status !== 'disbursed' && (
-                          <button
-                            onClick={() =>
-                              approveRequisition(req.id, 'Officially approved by General Manager.')
-                            }
-                            className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
-                            title="Approve Requisition for Payout"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Approve</span>
-                          </button>
-                        )}
-
-                      {/* Finance Officer: Disburse ONLY IF GM APPROVED! */}
+                      {/* 1. FINANCE TEAM ACTIONS */}
                       {currentUser?.role === 'finance' && (
-                        req.status === 'approved' ? (
-                          <button
-                            onClick={() =>
-                              disburseRequisition(
-                                req.id,
-                                req.paymentMethod,
-                                `REF-${Math.floor(100000 + Math.random() * 900000)}`,
-                                'Authorized and disbursed by Finance Custodian following GM approval'
-                              )
-                            }
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
-                            title="Disburse cash or electronic transfer"
-                          >
-                            <Coins className="w-3.5 h-3.5" />
-                            <span>Disburse</span>
-                          </button>
-                        ) : req.status !== 'disbursed' && req.status !== 'rejected' ? (
-                          <span
-                            className="text-[10px] text-stone-500 bg-stone-100 border border-stone-200 px-2 py-1 rounded-lg flex items-center gap-1 cursor-not-allowed"
-                            title="Awaiting General Manager approval. Finance cannot disburse until approved."
-                          >
-                            <Lock className="w-3 h-3 text-stone-400" />
-                            <span>Needs GM Approval</span>
-                          </span>
-                        ) : null
+                        <>
+                          {req.status === 'pending_finance' && (
+                            <button
+                              onClick={() =>
+                                verifyRequisition(
+                                  req.id,
+                                  'Verified by Finance. Forwarded to GM for approval.'
+                                )
+                              }
+                              className="bg-[#00AEEF] hover:bg-[#0284C7] text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                              title="Verify receipt & send to General Manager"
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                              <span>Verify & Send to GM</span>
+                            </button>
+                          )}
+
+                          {req.status === 'pending_gm' && (
+                            <span
+                              className="text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded-lg flex items-center gap-1 cursor-default"
+                              title="Verified by Finance. Waiting for General Manager to approve."
+                            >
+                              <Clock className="w-3 h-3 text-indigo-500" />
+                              <span>Sent to GM</span>
+                            </span>
+                          )}
+
+                          {req.status === 'approved' && (
+                            <button
+                              onClick={() =>
+                                disburseRequisition(
+                                  req.id,
+                                  req.paymentMethod,
+                                  `REF-${Math.floor(100000 + Math.random() * 900000)}`,
+                                  'Authorized and disbursed by Finance Custodian following GM approval'
+                                )
+                              }
+                              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                              title="Disburse cash or electronic transfer"
+                            >
+                              <Coins className="w-3.5 h-3.5" />
+                              <span>Disburse</span>
+                            </button>
+                          )}
+                        </>
+                      )}
+
+                      {/* 2. GENERAL MANAGER ACTIONS */}
+                      {currentUser?.role === 'general_manager' && (
+                        <>
+                          {req.status === 'pending_finance' && (
+                            <span
+                              className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg flex items-center gap-1 cursor-default"
+                              title="Finance team is checking receipts and verifying request."
+                            >
+                              <Clock className="w-3 h-3 text-amber-500" />
+                              <span>Pending Finance</span>
+                            </span>
+                          )}
+
+                          {req.status === 'pending_gm' && (
+                            <button
+                              onClick={() =>
+                                approveRequisition(
+                                  req.id,
+                                  'Officially approved by General Manager. Returned to Finance for payout.'
+                                )
+                              }
+                              className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                              title="Approve Requisition for Finance Payout"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Approve</span>
+                            </button>
+                          )}
+
+                          {req.status === 'approved' && (
+                            <span
+                              className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg flex items-center gap-1 cursor-default"
+                              title="Approved by GM. Sent to Finance for payment."
+                            >
+                              <CheckCircle className="w-3 h-3 text-emerald-500" />
+                              <span>Sent to Finance</span>
+                            </span>
+                          )}
+                        </>
                       )}
 
                       <button

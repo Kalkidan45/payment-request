@@ -98,25 +98,31 @@ export const getStatusDisplay = (
   dotColor: string;
 } => {
   switch (status) {
-    case 'pending_gm':
-    case 'pending_manager':
     case 'pending_finance':
+    case 'pending_manager':
       return {
-        label: 'Awaiting GM Approval',
+        label: 'Awaiting Finance Check',
         color: 'text-amber-800',
-        bg: 'bg-amber-50 border-amber-200',
+        bg: 'bg-amber-50 border-amber-300',
         dotColor: 'bg-amber-500',
+      };
+    case 'pending_gm':
+      return {
+        label: 'Verified by Finance (Awaiting GM Approval)',
+        color: 'text-indigo-800',
+        bg: 'bg-indigo-50 border-indigo-300',
+        dotColor: 'bg-indigo-500',
       };
     case 'approved':
       return {
-        label: 'GM Approved (Ready for Finance Payout)',
+        label: 'GM Approved (Returned to Finance for Payment)',
         color: 'text-emerald-800',
         bg: 'bg-emerald-50 border-emerald-300',
         dotColor: 'bg-emerald-500',
       };
     case 'disbursed':
       return {
-        label: 'Disbursed (Paid by Finance)',
+        label: 'Disbursed & Paid by Finance',
         color: 'text-[#0284C7]',
         bg: 'bg-sky-50 border-sky-300',
         dotColor: 'bg-[#00AEEF]',
@@ -125,12 +131,12 @@ export const getStatusDisplay = (
       return {
         label: 'Declined',
         color: 'text-rose-800',
-        bg: 'bg-rose-50 border-rose-200',
+        bg: 'bg-rose-50 border-rose-300',
         dotColor: 'bg-rose-500',
       };
     default:
       return {
-        label: 'Pending Review',
+        label: 'Awaiting Review',
         color: 'text-amber-800',
         bg: 'bg-amber-50 border-amber-200',
         dotColor: 'bg-amber-500',

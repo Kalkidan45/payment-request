@@ -17,6 +17,9 @@ import {
   ExternalLink,
   ShieldCheck,
   Check,
+  Clock,
+  FileCheck,
+  AlertCircle,
 } from 'lucide-react';
 import { PaymentMethod } from '../types';
 
@@ -25,7 +28,7 @@ export const RequisitionDetailModal: React.FC = () => {
     selectedRequisition,
     setSelectedRequisition,
     currentUser,
-    endorseRequisition,
+    verifyRequisition,
     approveRequisition,
     disburseRequisition,
     rejectRequisition,
@@ -48,22 +51,31 @@ export const RequisitionDetailModal: React.FC = () => {
   const status = getStatusDisplay(req.status);
   const cat = CATEGORY_DETAILS[req.category];
 
-  const handleEndorse = () => {
-    endorseRequisition(req.id, comment || 'Endorsed by store manager');
+  // Stage 2: Finance checks and forwards to GM
+  const handleVerify = () => {
+    verifyRequisition(
+      req.id,
+      comment || 'Checked & verified by Finance. Forwarded to General Manager for approval.'
+    );
     setSelectedRequisition(null);
   };
 
+  // Stage 3: GM approves and returns to Finance
   const handleApprove = () => {
-    approveRequisition(req.id, comment || 'Approved by management');
+    approveRequisition(
+      req.id,
+      comment || 'Approved by General Manager. Returned to Finance for payment disbursement.'
+    );
     setSelectedRequisition(null);
   };
 
+  // Stage 4: Finance disburses payment
   const handleDisburse = () => {
     disburseRequisition(
       req.id,
       disburseMethod,
       disburseRef || `REF-${Math.floor(100000 + Math.random() * 900000)}`,
-      comment || 'Disbursed and recorded in petty cash ledger'
+      comment || 'Disbursed and recorded in petty cash ledger following GM approval'
     );
     setSelectedRequisition(null);
   };
@@ -79,10 +91,17 @@ export const RequisitionDetailModal: React.FC = () => {
     setIsPrintModalOpen(true);
   };
 
+  // 4-Step Pipeline Status
+  const isStep1Done = true; // Staff request submitted
+  const isStep2Done = req.status === 'pending_gm' || req.status === 'approved' || req.status === 'disbursed';
+  const isStep3Done = req.status === 'approved' || req.status === 'disbursed';
+  const isStep4Done = req.status === 'disbursed';
+  const isRejected = req.status === 'rejected';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-900/70 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
       <div className="bg-white rounded-2xl sm:rounded-3xl border border-stone-200 shadow-2xl w-full max-w-2xl my-auto overflow-hidden max-h-[92vh] flex flex-col">
-        {/* Header - Fixed on mobile */}
+        {/* Header */}
         <div className="p-3.5 sm:p-5 bg-stone-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-sky-500/20 text-[#00AEEF] flex items-center justify-center font-bold shrink-0">
@@ -101,7 +120,7 @@ export const RequisitionDetailModal: React.FC = () => {
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-stone-400 mt-0.5 truncate">
-                Kurtta Kids Clothes Official Voucher
+                Kurtta Kids Clothes Official Payment Requisition
               </p>
             </div>
           </div>
@@ -124,7 +143,100 @@ export const RequisitionDetailModal: React.FC = () => {
           </div>
         </div>
 
-        {/* Content body with smooth momentum scrolling */}
+        {/* 4-Stage Workflow Stepper */}
+        <div className="bg-stone-100/80 px-4 py-3 border-b border-stone-200">
+          <div className="text-[10px] uppercase font-bold text-stone-500 tracking-wider mb-2 flex items-center justify-between">
+            <span>4-Step Payment Workflow</span>
+            <span className="text-[#0284C7] font-semibold">Staff ➔ Finance ➔ GM ➔ Finance</span>
+          </div>
+          <div className="grid grid-cols-4 gap-1.5 text-center text-[10px]">
+            {/* Step 1 */}
+            <div
+              className={`p-2 rounded-xl border transition-all ${
+                isStep1Done
+                  ? 'bg-sky-50 border-sky-300 text-sky-900 font-bold'
+                  : 'bg-white border-stone-200 text-stone-400'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-1 mb-0.5">
+                <CheckCircle className="w-3 h-3 text-sky-600" />
+                <span className="text-[9px] uppercase tracking-wider">Step 1</span>
+              </div>
+              <div className="truncate">Staff Request</div>
+            </div>
+
+            {/* Step 2 */}
+            <div
+              className={`p-2 rounded-xl border transition-all ${
+                isStep2Done
+                  ? 'bg-indigo-50 border-indigo-300 text-indigo-900 font-bold'
+                  : req.status === 'pending_finance'
+                  ? 'bg-amber-50 border-amber-400 text-amber-900 font-bold ring-2 ring-amber-400/30'
+                  : 'bg-white border-stone-200 text-stone-400'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-1 mb-0.5">
+                {isStep2Done ? (
+                  <CheckCircle className="w-3 h-3 text-indigo-600" />
+                ) : req.status === 'pending_finance' ? (
+                  <Clock className="w-3 h-3 text-amber-600 animate-pulse" />
+                ) : (
+                  <Clock className="w-3 h-3 text-stone-400" />
+                )}
+                <span className="text-[9px] uppercase tracking-wider">Step 2</span>
+              </div>
+              <div className="truncate">Finance Check</div>
+            </div>
+
+            {/* Step 3 */}
+            <div
+              className={`p-2 rounded-xl border transition-all ${
+                isStep3Done
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold'
+                  : req.status === 'pending_gm'
+                  ? 'bg-amber-50 border-amber-400 text-amber-900 font-bold ring-2 ring-amber-400/30'
+                  : 'bg-white border-stone-200 text-stone-400'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-1 mb-0.5">
+                {isStep3Done ? (
+                  <CheckCircle className="w-3 h-3 text-emerald-600" />
+                ) : req.status === 'pending_gm' ? (
+                  <Clock className="w-3 h-3 text-amber-600 animate-pulse" />
+                ) : (
+                  <Clock className="w-3 h-3 text-stone-400" />
+                )}
+                <span className="text-[9px] uppercase tracking-wider">Step 3</span>
+              </div>
+              <div className="truncate">GM Approval</div>
+            </div>
+
+            {/* Step 4 */}
+            <div
+              className={`p-2 rounded-xl border transition-all ${
+                isStep4Done
+                  ? 'bg-sky-50 border-sky-300 text-sky-900 font-bold'
+                  : req.status === 'approved'
+                  ? 'bg-emerald-50 border-emerald-400 text-emerald-900 font-bold ring-2 ring-emerald-400/30'
+                  : 'bg-white border-stone-200 text-stone-400'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-1 mb-0.5">
+                {isStep4Done ? (
+                  <CheckCircle className="w-3 h-3 text-sky-600" />
+                ) : req.status === 'approved' ? (
+                  <Coins className="w-3 h-3 text-emerald-600 animate-pulse" />
+                ) : (
+                  <Coins className="w-3 h-3 text-stone-400" />
+                )}
+                <span className="text-[9px] uppercase tracking-wider">Step 4</span>
+              </div>
+              <div className="truncate">Finance Payment</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Content body */}
         <div className="p-3.5 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
           {/* Key Amount & Title Banner */}
           <div className="bg-stone-50 border border-stone-200 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -136,7 +248,7 @@ export const RequisitionDetailModal: React.FC = () => {
                 {formatBirr(req.amount)}
               </div>
               <div className="text-xs text-stone-500 mt-0.5">
-                Method: <strong className="text-stone-800">{req.paymentMethod}</strong>
+                Preferred Method: <strong className="text-stone-800">{req.paymentMethod}</strong>
                 {req.paymentReference && ` · Ref: ${req.paymentReference}`}
               </div>
             </div>
@@ -148,7 +260,7 @@ export const RequisitionDetailModal: React.FC = () => {
               <div className="text-xs sm:text-sm font-bold text-stone-900 mt-0.5">
                 {req.branch}
               </div>
-              <div className="text-xs text-amber-800 font-semibold mt-0.5">
+              <div className="text-xs text-sky-800 font-semibold mt-0.5">
                 {cat?.name || req.category}
               </div>
             </div>
@@ -158,45 +270,56 @@ export const RequisitionDetailModal: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
               <span className="text-stone-400 font-medium">Expense Title:</span>
-              <p className="text-stone-900 font-semibold text-sm mt-0.5">{req.title}</p>
+              <p className="font-bold text-stone-900 mt-0.5 text-sm">{req.title}</p>
             </div>
 
             <div>
-              <span className="text-stone-400 font-medium">Payee / Vendor:</span>
-              <p className="text-stone-900 font-semibold text-sm mt-0.5">{req.payee}</p>
+              <span className="text-stone-400 font-medium">Payee / Beneficiary:</span>
+              <p className="font-semibold text-stone-900 mt-0.5 text-sm">{req.payee}</p>
             </div>
 
             <div>
               <span className="text-stone-400 font-medium">Requester:</span>
-              <p className="text-stone-900 font-medium mt-0.5">
-                {req.requesterName} ({req.requesterRole})
+              <p className="font-semibold text-stone-900 mt-0.5">
+                {req.requesterName} · {req.requesterRole}
               </p>
               <p className="text-stone-500 text-[11px]">{req.requesterPhone}</p>
             </div>
 
             <div>
-              <span className="text-stone-400 font-medium">Date Requested:</span>
-              <p className="text-stone-900 font-medium mt-0.5">{formatDate(req.createdAt)}</p>
-              <p className="text-stone-500 text-[11px]">
-                Urgency: <strong className="text-stone-700">{req.urgency}</strong>
+              <span className="text-stone-400 font-medium">Urgency & Date:</span>
+              <p className="font-semibold text-stone-900 mt-0.5">
+                <span
+                  className={`inline-block w-2 h-2 rounded-full mr-1.5 ${
+                    req.urgency === 'Emergency'
+                      ? 'bg-rose-500'
+                      : req.urgency === 'Urgent'
+                      ? 'bg-amber-500'
+                      : 'bg-emerald-500'
+                  }`}
+                ></span>
+                {req.urgency} Priority · {formatDate(req.createdAt)}
               </p>
             </div>
           </div>
 
           {/* Description */}
           {req.description && (
-            <div className="text-xs">
-              <span className="text-stone-400 font-medium">Detailed Justification:</span>
-              <p className="text-stone-700 mt-1 bg-stone-50 p-3 rounded-xl border border-stone-200 leading-relaxed">
-                {req.description}
-              </p>
+            <div className="bg-stone-50 p-3.5 rounded-xl border border-stone-200/80 text-xs">
+              <span className="text-stone-400 font-semibold uppercase text-[10px] tracking-wider block mb-1">
+                Business Justification & Details:
+              </span>
+              <p className="text-stone-700 leading-relaxed">{req.description}</p>
             </div>
           )}
 
-          {/* Rejection notice if declined */}
-          {req.status === 'rejected' && req.rejectionReason && (
-            <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-xl text-xs">
-              <strong className="block font-bold">Reason for Rejection:</strong>
+          {/* Rejection Note */}
+          {req.rejectionReason && (
+            <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3.5 rounded-xl text-xs">
+              <span className="font-bold flex items-center gap-1 text-rose-900 mb-1">
+                <XCircle className="w-4 h-4 text-rose-600" />
+                Reason for Rejection:
+              </span>
               <p className="mt-0.5">{req.rejectionReason}</p>
             </div>
           )}
@@ -243,13 +366,14 @@ export const RequisitionDetailModal: React.FC = () => {
 
           {/* Approval Workflow & Audit Trail */}
           <div className="border-t border-stone-200 pt-4">
-            <h3 className="text-xs font-bold text-stone-800 uppercase tracking-wider mb-3">
-              Approval Trail & Timestamps
+            <h3 className="text-xs font-bold text-stone-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-stone-500" />
+              <span>Audit Trail & Timestamped Log</span>
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {req.history.map((step, idx) => (
                 <div key={step.id} className="flex items-start gap-2.5 text-xs">
-                  <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                  <div className="w-6 h-6 rounded-full bg-sky-100 text-sky-900 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
                     {idx + 1}
                   </div>
                   <div className="flex-1 bg-stone-50 p-2.5 rounded-xl border border-stone-100">
@@ -261,8 +385,11 @@ export const RequisitionDetailModal: React.FC = () => {
                         {formatDate(step.timestamp)}
                       </span>
                     </div>
-                    <div className="text-[11px] text-amber-800 font-semibold capitalize mt-0.5">
-                      Action: {step.action}
+                    <div className="text-[11px] text-sky-900 font-semibold capitalize mt-0.5 flex items-center gap-1">
+                      <span>Action:</span>
+                      <span className="font-mono bg-stone-100 px-1.5 py-0.5 rounded text-[10px]">
+                        {step.action.replace(/_/g, ' ')}
+                      </span>
                     </div>
                     {step.comment && (
                       <p className="text-stone-600 mt-1 text-[11px]">{step.comment}</p>
@@ -273,12 +400,12 @@ export const RequisitionDetailModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Approval & Disbursement Action Controls (Role-Based Access) */}
+          {/* Dynamic Role-Based Action Controls */}
           {currentUser && req.status !== 'disbursed' && req.status !== 'rejected' && (
             <div className="border-t border-stone-200 pt-4 bg-stone-50 p-4 rounded-2xl">
               <h3 className="text-xs font-bold text-stone-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-amber-600" />
-                <span>Available Actions for Your Role ({currentUser.roleTitle})</span>
+                <ShieldCheck className="w-4 h-4 text-[#00AEEF]" />
+                <span>Action Controls ({currentUser.roleTitle})</span>
               </h3>
 
               {!isRejecting ? (
@@ -287,43 +414,67 @@ export const RequisitionDetailModal: React.FC = () => {
                     type="text"
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    placeholder="Add approval comment or notes (optional)..."
+                    placeholder="Add verification/approval comment or notes (optional)..."
                     className="w-full text-base sm:text-xs p-2.5 bg-white border border-stone-200 rounded-xl focus:outline-hidden focus:border-[#00AEEF] min-h-[44px]"
                   />
 
-                  {/* Actions for General Manager: SOLE APPROVAL FOR THE MONEY! */}
-                  {currentUser.role === 'general_manager' && req.status !== 'approved' && (
-                    <div className="space-y-2">
-                      <div className="p-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-medium">
-                        👑 <strong>General Manager Executive Authority:</strong> You hold sole approval authorization for store funds.
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={handleApprove}
-                          className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm transition-colors"
-                        >
-                          <Check className="w-4 h-4" />
-                          <span>Approve Money Requisition ({formatBirr(req.amount)})</span>
-                        </button>
-                        <button
-                          onClick={() => setIsRejecting(true)}
-                          className="bg-white hover:bg-rose-50 border border-rose-200 text-rose-700 font-semibold py-2.5 px-3 rounded-xl text-xs cursor-pointer"
-                        >
-                          Decline
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Actions for Finance Officer: CAN ONLY DISBURSE IF GM APPROVED! */}
+                  {/* 1. FINANCE TEAM ACTIONS */}
                   {currentUser.role === 'finance' && (
-                    <div>
-                      {req.status === 'approved' ? (
-                        /* GM has approved! Finance is authorized to disburse */
+                    <div className="space-y-2.5">
+                      {req.status === 'pending_finance' && (
+                        /* STAGE 2: Finance checks request and sends to GM */
+                        <div className="space-y-2">
+                          <div className="p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs space-y-1">
+                            <div className="font-bold flex items-center gap-1.5">
+                              <FileCheck className="w-4 h-4 text-amber-700" />
+                              <span>Finance Review & Verification Required:</span>
+                            </div>
+                            <p className="text-[11px] text-amber-800 leading-relaxed">
+                              Check the receipt, vendor quotation, and budget allocation. Once checked, click below to verify and forward to the General Manager for final approval.
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={handleVerify}
+                              className="flex-1 bg-[#00AEEF] hover:bg-[#0284C7] text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm transition-colors"
+                            >
+                              <Send className="w-4 h-4" />
+                              <span>Verify & Send to General Manager ({formatBirr(req.amount)})</span>
+                            </button>
+                            <button
+                              onClick={() => setIsRejecting(true)}
+                              className="bg-white hover:bg-rose-50 border border-rose-200 text-rose-700 font-semibold py-2.5 px-3 rounded-xl text-xs cursor-pointer"
+                            >
+                              Decline
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {req.status === 'pending_gm' && (
+                        /* Request is currently waiting for GM approval */
+                        <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs space-y-1">
+                          <div className="font-bold flex items-center gap-1.5">
+                            <Clock className="w-4 h-4 text-indigo-700 animate-pulse" />
+                            <span>Forwarded to General Manager:</span>
+                          </div>
+                          <p className="text-[11px] text-indigo-800 leading-relaxed">
+                            You have verified this requisition. It is now awaiting executive approval from General Manager Solomon Girma.
+                          </p>
+                        </div>
+                      )}
+
+                      {req.status === 'approved' && (
+                        /* STAGE 4: GM approved! Finance is authorized to pay/disburse */
                         <div className="space-y-2.5">
-                          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-2.5 rounded-xl text-xs font-semibold flex items-center gap-1.5">
-                            <Check className="w-4 h-4 text-emerald-600" />
-                            <span>Approved by General Manager. Authorized for Finance disbursement.</span>
+                          <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 p-3 rounded-xl text-xs space-y-1">
+                            <div className="font-bold flex items-center gap-1.5 text-emerald-900">
+                              <CheckCircle className="w-4 h-4 text-emerald-700" />
+                              <span>Approved by General Manager — Ready for Payout</span>
+                            </div>
+                            <p className="text-[11px] text-emerald-800">
+                              The General Manager has approved this voucher. You are now authorized to disburse funds.
+                            </p>
                           </div>
 
                           <div className="grid grid-cols-2 gap-2">
@@ -334,9 +485,9 @@ export const RequisitionDetailModal: React.FC = () => {
                               <select
                                 value={disburseMethod}
                                 onChange={(e) => setDisburseMethod(e.target.value as PaymentMethod)}
-                                className="w-full p-2 bg-white border border-stone-200 rounded-xl text-xs text-stone-900"
+                                className="w-full p-2 bg-white border border-stone-200 rounded-xl text-xs text-stone-900 font-medium"
                               >
-                                <option value="Physical Cash">Physical Cash</option>
+                                <option value="Physical Cash">Physical Cash (Safe Box)</option>
                                 <option value="Telebirr">Telebirr Direct Payout</option>
                                 <option value="CBE Birr">CBE Birr Transfer</option>
                               </select>
@@ -367,29 +518,84 @@ export const RequisitionDetailModal: React.FC = () => {
                               onClick={() => setIsRejecting(true)}
                               className="bg-white hover:bg-rose-50 border border-rose-200 text-rose-700 font-semibold py-2.5 px-3 rounded-xl text-xs cursor-pointer"
                             >
-                              Reject
+                              Decline
                             </button>
                           </div>
                         </div>
-                      ) : (
-                        /* GM has NOT approved yet! Finance cannot disburse */
-                        <div className="bg-amber-50 border border-amber-300 text-amber-900 p-3.5 rounded-xl text-xs space-y-1">
-                          <div className="font-bold flex items-center gap-1.5 text-amber-900">
-                            <ShieldCheck className="w-4 h-4 text-amber-700" />
-                            <span>Disbursement Locked: Awaiting General Manager's Approval</span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 2. GENERAL MANAGER ACTIONS */}
+                  {currentUser.role === 'general_manager' && (
+                    <div className="space-y-2.5">
+                      {req.status === 'pending_finance' && (
+                        <div className="p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs space-y-1">
+                          <div className="font-bold flex items-center gap-1.5">
+                            <Clock className="w-4 h-4 text-amber-700" />
+                            <span>Step 2: Awaiting Finance Check:</span>
                           </div>
                           <p className="text-[11px] text-amber-800 leading-relaxed">
-                            Finance can only disburse funds after the General Manager officially approves this requisition. You cannot disburse without the General Manager's approval.
+                            Finance team is checking the receipts and verifying the request. It will appear for your executive approval once verified.
+                          </p>
+                        </div>
+                      )}
+
+                      {req.status === 'pending_gm' && (
+                        /* STAGE 3: GM Approves and returns to Finance */
+                        <div className="space-y-2">
+                          <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs space-y-1">
+                            <div className="font-bold flex items-center gap-1.5">
+                              <ShieldCheck className="w-4 h-4 text-indigo-700" />
+                              <span>👑 General Manager Executive Approval:</span>
+                            </div>
+                            <p className="text-[11px] text-indigo-800 leading-relaxed">
+                              Finance has verified this request. You hold sole executive authorization to approve store funds.
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={handleApprove}
+                              className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm transition-colors"
+                            >
+                              <Check className="w-4 h-4" />
+                              <span>Approve & Send to Finance for Payment ({formatBirr(req.amount)})</span>
+                            </button>
+                            <button
+                              onClick={() => setIsRejecting(true)}
+                              className="bg-white hover:bg-rose-50 border border-rose-200 text-rose-700 font-semibold py-2.5 px-3 rounded-xl text-xs cursor-pointer"
+                            >
+                              Decline
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {req.status === 'approved' && (
+                        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs space-y-1">
+                          <div className="font-bold flex items-center gap-1.5 text-emerald-900">
+                            <CheckCircle className="w-4 h-4 text-emerald-700" />
+                            <span>Approved by General Manager:</span>
+                          </div>
+                          <p className="text-[11px] text-emerald-800 leading-relaxed">
+                            This voucher has been officially approved and returned to Finance for payment disbursement.
                           </p>
                         </div>
                       )}
                     </div>
                   )}
 
+                  {/* 3. STAFF / REQUESTER VIEW */}
                   {currentUser.role === 'staff' && (
-                    <p className="text-[11px] text-stone-500">
-                      This requisition is in approval flow. It requires General Manager approval before Finance releases payment.
-                    </p>
+                    <div className="p-3 rounded-xl bg-sky-50 border border-sky-200 text-sky-900 text-xs space-y-1">
+                      <div className="font-bold flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-[#00AEEF]" />
+                        <span>Requisition in Progress:</span>
+                      </div>
+                      <p className="text-[11px] text-sky-800 leading-relaxed">
+                        Your requisition is being processed through the standard 4-step control workflow (Staff Request ➔ Finance Check ➔ GM Approval ➔ Finance Payment).
+                      </p>
+                    </div>
                   )}
                 </div>
               ) : (
@@ -403,7 +609,7 @@ export const RequisitionDetailModal: React.FC = () => {
                     required
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}
-                    placeholder="e.g. Non-compliant receipt, exceeds petty cash ceiling, or duplicate requisition..."
+                    placeholder="e.g. Non-compliant receipt, exceeds petty cash allocation, or duplicate requisition..."
                     className="w-full text-xs p-2.5 bg-white border border-rose-200 rounded-xl focus:outline-hidden focus:border-rose-500"
                   />
                   <div className="flex items-center gap-2">

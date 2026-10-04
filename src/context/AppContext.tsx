@@ -53,6 +53,11 @@ interface AppContextType {
   committedPendingAmount: number;
   liveBalance: number;
 
+  // Pipeline counts for the 4-stage flow
+  pendingFinanceCount: number; // Stage 1: Needs Finance check & verification
+  pendingGMCount: number; // Stage 2: Needs GM approval
+  readyForPaymentCount: number; // Stage 3: Approved by GM, needs Finance disbursement
+
   // Role permissions helpers
   isManagerOrFinance: boolean;
   isManager: boolean;
@@ -88,7 +93,7 @@ interface AppContextType {
     receiptUrl?: string;
     receiptName?: string;
   }) => Promise<Requisition>;
-  endorseRequisition: (reqId: string, comment?: string) => Promise<void>;
+  verifyRequisition: (reqId: string, comment?: string) => Promise<void>;
   approveRequisition: (reqId: string, comment?: string) => Promise<void>;
   disburseRequisition: (
     reqId: string,
@@ -100,8 +105,6 @@ interface AppContextType {
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
-
-const STORAGE_KEY_USER = 'kurtta_pc_user_v3';
 
 const sanitizeRole = (roleStr?: string): Role => {
   if (roleStr === 'finance' || roleStr === 'finance_officer') return 'finance';
@@ -119,21 +122,31 @@ const sanitizeUser = (u: any): User => {
     name: u.name || 'Store Staff',
     email: u.email || 'staff@kurttakids.com',
     role,
-    roleTitle: u.roleTitle || (role === 'general_manager' ? 'General Manager (Sole Approval)' : role === 'finance' ? 'Finance Custodian' : 'Store Staff'),
+    roleTitle:
+      u.roleTitle ||
+      (role === 'general_manager'
+        ? 'General Manager (Sole Approval)'
+        : role === 'finance'
+        ? 'Finance Custodian & Officer'
+        : 'Store Staff'),
     department: u.department || 'Retail Operations',
     branch: u.branch || 'Bole Medhanialem Flagship',
     phone: u.phone || '+251 91 123 4567',
-    avatarUrl: u.avatarUrl || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+    avatarUrl:
+      u.avatarUrl ||
+      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
     createdAt: u.createdAt || new Date().toISOString(),
   };
 };
 
 const sanitizeRequisition = (r: any): Requisition => {
-  let status: RequisitionStatus = 'pending_gm';
-  if (r.status === 'approved') status = 'approved';
+  let status: RequisitionStatus = 'pending_finance';
+  if (r.status === 'pending_gm') status = 'pending_gm';
+  else if (r.status === 'approved') status = 'approved';
   else if (r.status === 'disbursed') status = 'disbursed';
   else if (r.status === 'rejected') status = 'rejected';
-  else status = 'pending_gm';
+  else if (r.status === 'pending_finance' || r.status === 'pending_manager') status = 'pending_finance';
+  else status = 'pending_finance';
 
   return {
     ...r,
@@ -148,13 +161,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [requisitions, setRequisitions] = useState<Requisition[]>(INITIAL_REQUISITIONS);
   const [pettyCashFund, setPettyCashFund] = useState<PettyCashFund>(INITIAL_PETTY_CASH_FUND);
 
-  // Current logged in user (starts from login screen every time)
+  // Current logged in user (starts from login screen every time on fresh load)
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // Clear any persistent storage so system starts fresh at login
   useEffect(() => {
     try {
-      localStorage.removeItem(STORAGE_KEY_USER);
+      localStorage.removeItem('kurtta_pc_user_v3');
       localStorage.removeItem('kurtta_pc_user_v2');
       localStorage.removeItem('kurtta_pc_user_v1');
     } catch {
@@ -165,10 +178,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Role permissions
   const isManagerOrFinance = useMemo(() => {
     if (!currentUser) return false;
-    return (
-      currentUser.role === 'finance' ||
-      currentUser.role === 'general_manager'
-    );
+    return currentUser.role === 'finance' || currentUser.role === 'general_manager';
   }, [currentUser]);
 
   const isManager = useMemo(() => {
@@ -205,14 +215,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     if (currentUser?.role === 'staff') {
       setActiveTabState('my_requests');
-    } else if (activeTab === 'my_requests') {
+    } else if (currentUser) {
       setActiveTabState('dashboard');
     }
-  }, [currentUser]);
-
-  // Ensure clean session per load
-  useEffect(() => {
-    // No automatic persistence so system starts from login every time
   }, [currentUser]);
 
   // Modals & Filters
@@ -238,7 +243,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         // 1. Users Collection
         const usersCol = collection(db, 'users');
-        // Clean up legacy Dawit Bekele doc if present in Firestore
         try {
           deleteDoc(doc(db, 'users', 'usr-2')).catch(() => {});
         } catch {
@@ -293,7 +297,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         });
       } catch (err) {
-        console.warn('Firestore initialization notice:', err);
+        console.warn('Firestore real-time connection error, using local state:', err);
       }
     };
 
@@ -314,7 +318,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // LIVE METRICS: Calculate in real time
   const currentMonthStr = '2026-10';
-  const todayStr = '2026-10-03';
+  const todayStr = '2026-10-04';
 
   const liveSpentThisMonth = useMemo(() => {
     return requisitions
@@ -330,8 +334,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const committedPendingAmount = useMemo(() => {
     return requisitions
-      .filter((r) => r.status === 'pending_gm' || r.status === 'approved')
+      .filter(
+        (r) =>
+          r.status === 'pending_finance' ||
+          r.status === 'pending_gm' ||
+          r.status === 'approved'
+      )
       .reduce((sum, r) => sum + r.amount, 0);
+  }, [requisitions]);
+
+  // Pipeline stage counts
+  const pendingFinanceCount = useMemo(() => {
+    return requisitions.filter((r) => r.status === 'pending_finance').length;
+  }, [requisitions]);
+
+  const pendingGMCount = useMemo(() => {
+    return requisitions.filter((r) => r.status === 'pending_gm').length;
+  }, [requisitions]);
+
+  const readyForPaymentCount = useMemo(() => {
+    return requisitions.filter((r) => r.status === 'approved').length;
   }, [requisitions]);
 
   const liveBalance = pettyCashFund.currentBalance;
@@ -352,9 +374,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
 
     if (match) {
-      // If password provided, verify or accept default
       if (password && match.password && match.password !== password) {
-        // For testing convenience, also accept password123 or kurtta2026
         if (password !== 'password123' && password !== 'kurtta2026') {
           return false;
         }
@@ -427,6 +447,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newUser;
   };
 
+  // STAGE 1: Staff submits cash requisition -> goes to Finance team for check & verification
   const createRequisition = async (reqData: {
     title: string;
     category: ExpenseCategory;
@@ -442,11 +463,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!currentUser) throw new Error('Must be logged in');
 
     const nextNumber = requisitions.length + 110;
-    const now = '2026-10-03T' + new Date().toISOString().substring(11);
-
-    // Initial status: GM requests are approved; Staff requests go to General Manager for approval
-    const initialStatus: RequisitionStatus =
-      currentUser.role === 'general_manager' ? 'approved' : 'pending_gm';
+    const now = '2026-10-04T' + new Date().toISOString().substring(11);
 
     const newReq: Requisition = {
       id: `req-${Date.now()}`,
@@ -459,7 +476,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       paymentMethod: reqData.paymentMethod,
       description: reqData.description,
       urgency: reqData.urgency,
-      status: initialStatus,
+      status: 'pending_finance', // Stage 1: Submitted, awaiting Finance check
       requesterId: currentUser.id,
       requesterName: currentUser.name,
       requesterRole: currentUser.roleTitle,
@@ -475,7 +492,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           userName: currentUser.name,
           userRole: currentUser.role,
           action: 'submitted',
-          comment: 'Requisition submitted for General Manager approval.',
+          comment: 'Requisition submitted by Staff. Sent to Finance team for check & verification.',
           timestamp: now,
         },
       ],
@@ -492,16 +509,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newReq;
   };
 
-  const endorseRequisition = async (reqId: string, comment?: string) => {
+  // STAGE 2: Finance checks the request and forwards to General Manager
+  const verifyRequisition = async (reqId: string, comment?: string) => {
     if (!currentUser) return;
-    const now = '2026-10-03T' + new Date().toISOString().substring(11);
+    if (currentUser.role !== 'finance' && currentUser.role !== 'general_manager') {
+      alert('Unauthorized: Only Finance can check and verify staff requests.');
+      return;
+    }
 
+    const now = '2026-10-04T' + new Date().toISOString().substring(11);
     const target = requisitions.find((r) => r.id === reqId);
     if (!target) return;
 
     const updatedReq: Requisition = {
       ...target,
-      status: 'pending_gm',
+      status: 'pending_gm', // Stage 2: Verified by Finance, waiting for GM
       updatedAt: now,
       history: [
         ...target.history,
@@ -510,8 +532,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           userId: currentUser.id,
           userName: currentUser.name,
           userRole: currentUser.role,
-          action: 'submitted',
-          comment: comment || 'Submitted to General Manager for approval.',
+          action: 'verified_by_finance',
+          comment:
+            comment ||
+            'Checked & verified by Finance. Forwarded to General Manager for executive approval.',
           timestamp: now,
         },
       ],
@@ -525,13 +549,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         history: updatedReq.history,
       });
     } catch (e) {
-      console.warn('Firestore endorse update fallback:', e);
+      console.warn('Firestore verify update fallback:', e);
     }
 
     setRequisitions((prev) => prev.map((r) => (r.id === reqId ? updatedReq : r)));
   };
 
-  // GENERAL MANAGER ONLY: Sole authority to approve money!
+  // STAGE 3: General Manager approves the request and returns it to Finance for payment
   const approveRequisition = async (reqId: string, comment?: string) => {
     if (!currentUser) return;
     if (currentUser.role !== 'general_manager') {
@@ -539,14 +563,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    const now = '2026-10-03T' + new Date().toISOString().substring(11);
-
+    const now = '2026-10-04T' + new Date().toISOString().substring(11);
     const target = requisitions.find((r) => r.id === reqId);
     if (!target) return;
 
     const updatedReq: Requisition = {
       ...target,
-      status: 'approved',
+      status: 'approved', // Stage 3: GM Approved, returned to Finance for payment
       updatedAt: now,
       history: [
         ...target.history,
@@ -555,8 +578,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           userId: currentUser.id,
           userName: currentUser.name,
           userRole: currentUser.role,
-          action: 'approved',
-          comment: comment || 'Officially approved by General Manager. Authorized for Finance disbursement.',
+          action: 'approved_by_gm',
+          comment:
+            comment ||
+            'Officially approved by General Manager. Returned to Finance team for payout disbursement.',
           timestamp: now,
         },
       ],
@@ -575,7 +600,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRequisitions((prev) => prev.map((r) => (r.id === reqId ? updatedReq : r)));
   };
 
-  // FINANCE OFFICER: Disburses payment ONLY WHEN status === 'approved' by General Manager!
+  // STAGE 4: Finance disburses payment ONLY after General Manager approval
   const disburseRequisition = async (
     reqId: string,
     paymentMethod: PaymentMethod,
@@ -583,20 +608,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     comment?: string
   ) => {
     if (!currentUser) return;
-    const now = '2026-10-03T' + new Date().toISOString().substring(11);
+    if (currentUser.role !== 'finance' && currentUser.role !== 'general_manager') {
+      alert('Unauthorized: Only Finance Custodian can disburse funds.');
+      return;
+    }
 
+    const now = '2026-10-04T' + new Date().toISOString().substring(11);
     const target = requisitions.find((r) => r.id === reqId);
     if (!target) return;
 
-    // RULE: Finance CANNOT disburse without General Manager's approval!
+    // RULE: Finance CANNOT disburse without prior General Manager approval!
     if (target.status !== 'approved') {
-      alert("Finance cannot disburse funds without prior approval from the General Manager.");
+      alert('Finance cannot disburse payment until the General Manager has approved the requisition.');
       return;
     }
 
     const updatedReq: Requisition = {
       ...target,
-      status: 'disbursed',
+      status: 'disbursed', // Stage 4: Paid & Disbursed
       paymentMethod,
       paymentReference: reference || `REF-${Math.floor(100000 + Math.random() * 900000)}`,
       updatedAt: now,
@@ -610,7 +639,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           action: 'disbursed',
           comment:
             comment ||
-            `Disbursed via ${paymentMethod} by Finance following General Manager's approval.`,
+            `Disbursed via ${paymentMethod} by Finance team following General Manager's approval.`,
           timestamp: now,
         },
       ],
@@ -640,7 +669,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const rejectRequisition = async (reqId: string, reason: string) => {
     if (!currentUser) return;
-    const now = '2026-10-03T' + new Date().toISOString().substring(11);
+    const now = '2026-10-04T' + new Date().toISOString().substring(11);
 
     const target = requisitions.find((r) => r.id === reqId);
     if (!target) return;
@@ -658,7 +687,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           userName: currentUser.name,
           userRole: currentUser.role,
           action: 'rejected',
-          comment: `Declined: ${reason}`,
+          comment: `Declined by ${currentUser.name} (${currentUser.roleTitle}): ${reason}`,
           timestamp: now,
         },
       ],
@@ -705,6 +734,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         liveSpentToday,
         committedPendingAmount,
         liveBalance,
+        pendingFinanceCount,
+        pendingGMCount,
+        readyForPaymentCount,
         isManagerOrFinance,
         isManager,
         isGeneralManager,
@@ -716,7 +748,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         switchRole,
         createStaffByManager,
         createRequisition,
-        endorseRequisition,
+        verifyRequisition,
         approveRequisition,
         disburseRequisition,
         rejectRequisition,

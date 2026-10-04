@@ -137,7 +137,7 @@ export const StaffRequestView: React.FC = () => {
           <div>
             <h2 className="text-base font-bold text-stone-900">My Requisition Vouchers</h2>
             <p className="text-xs text-stone-500">
-              Track status: Submitted → General Manager Approval → Finance Disbursement
+              4-Step Workflow: Staff Request ➔ Finance Check ➔ GM Approval ➔ Finance Payment
             </p>
           </div>
 

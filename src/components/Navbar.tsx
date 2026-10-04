@@ -40,9 +40,9 @@ export const Navbar: React.FC = () => {
   const currentRoleInfo = getRoleDisplay(currentUser.role);
 
   const availableRoles: { role: Role; label: string; desc: string }[] = [
-    { role: 'staff', label: 'Almaz (Staff / Requester)', desc: 'Request page only (Creates vouchers)' },
-    { role: 'general_manager', label: 'Solomon (General Manager)', desc: 'Sole approval authority for all requests' },
-    { role: 'finance', label: 'Bethelhem (Finance Custodian)', desc: 'Disburses GM-approved vouchers & reports' },
+    { role: 'staff', label: 'Almaz (Staff / Requester)', desc: 'Stage 1: Creates vouchers (Request page only)' },
+    { role: 'finance', label: 'Bethelhem (Finance Team)', desc: 'Stage 2 & 4: Checks requests & disburses payments' },
+    { role: 'general_manager', label: 'Solomon (General Manager)', desc: 'Stage 3: Executive approval authority' },
   ];
 
   return (
