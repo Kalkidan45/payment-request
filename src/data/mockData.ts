@@ -1,4 +1,4 @@
-import { User, Requisition, PettyCashFund, ExpenseCategory } from '../types';
+import { User, Requisition, PettyCashFund } from '../types';
 
 export const INITIAL_USERS: User[] = [
   {
@@ -73,66 +73,6 @@ export const INITIAL_USERS: User[] = [
   },
 ];
 
-export const CATEGORY_DETAILS: Record<
-  ExpenseCategory,
-  { name: string; icon: string; color: string; bg: string }
-> = {
-  fabric_accessories: {
-    name: 'Fabrics, Ribbons & Sewing Trims',
-    icon: 'Scissors',
-    color: 'text-sky-900',
-    bg: 'bg-sky-50',
-  },
-  packaging_tags: {
-    name: 'Packaging & Kids Gift Bags',
-    icon: 'Package',
-    color: 'text-cyan-900',
-    bg: 'bg-cyan-50',
-  },
-  local_courier: {
-    name: 'Courier & Errand Delivery',
-    icon: 'Bike',
-    color: 'text-emerald-900',
-    bg: 'bg-emerald-50',
-  },
-  refreshments: {
-    name: 'Store Tea, Coffee & Water',
-    icon: 'Coffee',
-    color: 'text-amber-900',
-    bg: 'bg-amber-50',
-  },
-  cleaning_sanitation: {
-    name: 'Shop Cleaning & Child Hygiene',
-    icon: 'Sparkles',
-    color: 'text-teal-900',
-    bg: 'bg-teal-50',
-  },
-  store_maintenance: {
-    name: 'Store Hangers & Fixture Fixes',
-    icon: 'Wrench',
-    color: 'text-indigo-900',
-    bg: 'bg-indigo-50',
-  },
-  stationery_pos: {
-    name: 'POS Rolls & Price Stickers',
-    icon: 'Receipt',
-    color: 'text-blue-900',
-    bg: 'bg-blue-50',
-  },
-  utilities_airtime: {
-    name: 'Airtime & Prepaid Power Token',
-    icon: 'Zap',
-    color: 'text-purple-900',
-    bg: 'bg-purple-50',
-  },
-  other: {
-    name: 'Other Minor Petty Cash',
-    icon: 'CircleDollarSign',
-    color: 'text-stone-800',
-    bg: 'bg-stone-50',
-  },
-};
-
 export const INITIAL_PETTY_CASH_FUND: PettyCashFund = {
   id: 'fund-main',
   totalAllocated: 60000,
@@ -145,14 +85,11 @@ export const INITIAL_REQUISITIONS: Requisition[] = [
     id: 'req-101',
     voucherNumber: 'PCV-2026-101',
     title: 'Replacement zippers & cotton lining for baby rompers',
-    category: 'fabric_accessories',
     amount: 1450,
     branch: 'Kazanchis Atelier',
-    payee: 'Mercato Habesha Haberdashery & Thread Store',
     paymentMethod: 'Physical Cash',
     paymentReference: 'CASH-VOUCH-101',
-    description: 'Urgent 40 sets of baby-safe YKK soft nylon zippers and 12 meters of organic cotton lining for the new toddler collection batch.',
-    urgency: 'Urgent',
+    description: '40 sets of baby-safe YKK soft nylon zippers and 12 meters of organic cotton lining for the toddler collection batch.',
     status: 'disbursed',
     requesterId: 'usr-5',
     requesterName: 'Yohannes Tesfaye',
@@ -160,8 +97,6 @@ export const INITIAL_REQUISITIONS: Requisition[] = [
     requesterPhone: '+251 92 111 2233',
     createdAt: '2026-10-02T11:20:00Z',
     updatedAt: '2026-10-02T14:45:00Z',
-    receiptUrl: 'https://images.unsplash.com/photo-1554415707-9e4c018a482a?w=600&auto=format&fit=crop&q=80',
-    receiptName: 'Mercato_Sewing_Receipt_02Oct.jpg',
     history: [
       {
         id: 'hist-1',
@@ -178,7 +113,7 @@ export const INITIAL_REQUISITIONS: Requisition[] = [
         userName: 'Bethelhem Haile',
         userRole: 'finance',
         action: 'verified_by_finance',
-        comment: 'Verified receipt quotation and fund allocation in Atelier budget.',
+        comment: 'Verified quotation and fund allocation in Atelier budget.',
         timestamp: '2026-10-02T12:15:00Z',
       },
       {
@@ -205,14 +140,11 @@ export const INITIAL_REQUISITIONS: Requisition[] = [
     id: 'req-102',
     voucherNumber: 'PCV-2026-102',
     title: 'Customer doorstep deliveries - Bole & Kazanchis',
-    category: 'local_courier',
     amount: 850,
     branch: 'Bole Medhanialem Flagship',
-    payee: 'Fetan Express City Motor Messenger',
     paymentMethod: 'Telebirr',
     paymentReference: 'TB-928491024',
-    description: 'Motorcycle courier fee for sending 6 gift packages to VIP clients around Sarbet and Old Airport.',
-    urgency: 'Normal',
+    description: 'Motorcycle messenger fee for sending 6 gift packages to VIP clients around Sarbet and Old Airport.',
     status: 'disbursed',
     requesterId: 'usr-1',
     requesterName: 'Almaz Tadesse',
@@ -220,8 +152,6 @@ export const INITIAL_REQUISITIONS: Requisition[] = [
     requesterPhone: '+251 91 124 5892',
     createdAt: '2026-10-02T16:00:00Z',
     updatedAt: '2026-10-02T17:15:00Z',
-    receiptUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=80',
-    receiptName: 'Fetan_Courier_Dispatch_Slip.jpg',
     history: [
       {
         id: 'hist-5',
@@ -256,7 +186,7 @@ export const INITIAL_REQUISITIONS: Requisition[] = [
         userName: 'Bethelhem Haile',
         userRole: 'finance',
         action: 'disbursed',
-        comment: 'Transferred 850 Birr to courier phone via Telebirr.',
+        comment: 'Transferred 850 Birr via Telebirr.',
         timestamp: '2026-10-02T17:15:00Z',
       },
     ],
@@ -265,14 +195,11 @@ export const INITIAL_REQUISITIONS: Requisition[] = [
     id: 'req-103',
     voucherNumber: 'PCV-2026-103',
     title: 'Customer hospitality - highland coffee & pure water refills',
-    category: 'refreshments',
     amount: 1100,
     branch: 'Bole Medhanialem Flagship',
-    payee: 'Yes Mineral Water Distribution & Tomoca Beans',
     paymentMethod: 'Physical Cash',
     paymentReference: 'CASH-VOUCH-103',
-    description: '3 large 20L Yes water refills, roasted Ethiopian highland coffee beans, sugar, and frankincense for customer welcome area.',
-    urgency: 'Normal',
+    description: '3 large 20L water refills, roasted Ethiopian highland coffee beans, and sugar for customer hospitality area.',
     status: 'disbursed',
     requesterId: 'usr-1',
     requesterName: 'Almaz Tadesse',
@@ -280,8 +207,6 @@ export const INITIAL_REQUISITIONS: Requisition[] = [
     requesterPhone: '+251 91 124 5892',
     createdAt: '2026-10-03T08:30:00Z',
     updatedAt: '2026-10-03T09:40:00Z',
-    receiptUrl: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=600&auto=format&fit=crop&q=80',
-    receiptName: 'Yes_Water_And_Coffee_Receipt.jpg',
     history: [
       {
         id: 'hist-8',
@@ -297,7 +222,7 @@ export const INITIAL_REQUISITIONS: Requisition[] = [
         userName: 'Bethelhem Haile',
         userRole: 'finance',
         action: 'verified_by_finance',
-        comment: 'Water dispenser bottles received at Bole branch.',
+        comment: 'Water bottles delivered to store.',
         timestamp: '2026-10-03T08:50:00Z',
       },
       {
@@ -323,13 +248,10 @@ export const INITIAL_REQUISITIONS: Requisition[] = [
     id: 'req-105',
     voucherNumber: 'PCV-2026-105',
     title: 'Custom printed Kurtta branded kraft paper shopping bags',
-    category: 'packaging_tags',
     amount: 3200,
     branch: 'Piassa Kids Corner',
-    payee: 'Addis Colour Print & Packaging',
     paymentMethod: 'CBE Birr',
     description: '150 pieces of medium sized Kurtta Kids gift bags with cotton ribbon handles for baby gift hampers.',
-    urgency: 'Urgent',
     status: 'pending_finance',
     requesterId: 'usr-6',
     requesterName: 'Sara Abebe',
@@ -344,7 +266,7 @@ export const INITIAL_REQUISITIONS: Requisition[] = [
         userName: 'Sara Abebe',
         userRole: 'staff',
         action: 'submitted',
-        comment: 'Gift wrapping bags stock running out ahead of Saturday.',
+        comment: 'Gift packaging stock running out ahead of the weekend.',
         timestamp: '2026-10-04T08:15:00Z',
       },
     ],
@@ -353,13 +275,10 @@ export const INITIAL_REQUISITIONS: Requisition[] = [
     id: 'req-104',
     voucherNumber: 'PCV-2026-104',
     title: 'Baby-safe sanitizing wipes & floor cleaner for play corner',
-    category: 'cleaning_sanitation',
     amount: 1780,
     branch: 'Bole Medhanialem Flagship',
-    payee: 'Family First Supermarket Bole',
     paymentMethod: 'Physical Cash',
     description: 'Organic hypoallergenic disinfecting sprays and soft floor mop heads to maintain child sanitation in the trial & play corner.',
-    urgency: 'Urgent',
     status: 'pending_gm',
     requesterId: 'usr-1',
     requesterName: 'Almaz Tadesse',
@@ -367,8 +286,6 @@ export const INITIAL_REQUISITIONS: Requisition[] = [
     requesterPhone: '+251 91 124 5892',
     createdAt: '2026-10-03T10:05:00Z',
     updatedAt: '2026-10-03T10:25:00Z',
-    receiptUrl: 'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=600&auto=format&fit=crop&q=80',
-    receiptName: 'Sanitizer_Proforma_Invoice.jpg',
     history: [
       {
         id: 'hist-11',
@@ -385,7 +302,7 @@ export const INITIAL_REQUISITIONS: Requisition[] = [
         userName: 'Bethelhem Haile',
         userRole: 'finance',
         action: 'verified_by_finance',
-        comment: 'Checked proforma pricing against supplier rates. Recommended for GM approval.',
+        comment: 'Checked against supplier rates. Recommended for GM approval.',
         timestamp: '2026-10-03T10:25:00Z',
       },
     ],
@@ -394,13 +311,10 @@ export const INITIAL_REQUISITIONS: Requisition[] = [
     id: 'req-100',
     voucherNumber: 'PCV-2026-100',
     title: 'Kids showroom electrical spotlight replacements',
-    category: 'store_maintenance',
     amount: 1350,
     branch: 'Bole Medhanialem Flagship',
-    payee: 'Bole Lighting & Electrical Supplies',
     paymentMethod: 'Physical Cash',
     description: 'Replacing 4 warm spotlight bulbs in the kids mannequins showroom window display.',
-    urgency: 'Normal',
     status: 'approved',
     requesterId: 'usr-1',
     requesterName: 'Almaz Tadesse',
@@ -408,8 +322,6 @@ export const INITIAL_REQUISITIONS: Requisition[] = [
     requesterPhone: '+251 91 124 5892',
     createdAt: '2026-10-03T09:15:00Z',
     updatedAt: '2026-10-03T10:10:00Z',
-    receiptUrl: 'https://images.unsplash.com/photo-1554415707-9e4c018a482a?w=600&auto=format&fit=crop&q=80',
-    receiptName: 'Bole_Lighting_Quotation.jpg',
     history: [
       {
         id: 'hist-100-1',
@@ -425,7 +337,7 @@ export const INITIAL_REQUISITIONS: Requisition[] = [
         userName: 'Bethelhem Haile',
         userRole: 'finance',
         action: 'verified_by_finance',
-        comment: 'Checked quotation validity. Forwarded to GM.',
+        comment: 'Quotation verified. Forwarded to GM.',
         timestamp: '2026-10-03T09:40:00Z',
       },
       {

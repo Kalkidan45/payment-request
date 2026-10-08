@@ -6,7 +6,6 @@ import {
   Role,
   PaymentMethod,
   BranchLocation,
-  ExpenseCategory,
   RequisitionStatus,
 } from '../types';
 import {
@@ -83,15 +82,10 @@ interface AppContextType {
   }) => Promise<User>;
   createRequisition: (reqData: {
     title: string;
-    category: ExpenseCategory;
     amount: number;
     branch: BranchLocation;
-    payee: string;
     paymentMethod: PaymentMethod;
     description: string;
-    urgency: 'Normal' | 'Urgent' | 'Emergency';
-    receiptUrl?: string;
-    receiptName?: string;
   }) => Promise<Requisition>;
   verifyRequisition: (reqId: string, comment?: string) => Promise<void>;
   approveRequisition: (reqId: string, comment?: string) => Promise<void>;
@@ -450,15 +444,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // STAGE 1: Staff submits cash requisition -> goes to Finance team for check & verification
   const createRequisition = async (reqData: {
     title: string;
-    category: ExpenseCategory;
     amount: number;
     branch: BranchLocation;
-    payee: string;
     paymentMethod: PaymentMethod;
     description: string;
-    urgency: 'Normal' | 'Urgent' | 'Emergency';
-    receiptUrl?: string;
-    receiptName?: string;
   }): Promise<Requisition> => {
     if (!currentUser) throw new Error('Must be logged in');
 
@@ -469,13 +458,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `req-${Date.now()}`,
       voucherNumber: `PCV-2026-${nextNumber}`,
       title: reqData.title,
-      category: reqData.category,
       amount: reqData.amount,
       branch: reqData.branch,
-      payee: reqData.payee,
       paymentMethod: reqData.paymentMethod,
       description: reqData.description,
-      urgency: reqData.urgency,
       status: 'pending_finance', // Stage 1: Submitted, awaiting Finance check
       requesterId: currentUser.id,
       requesterName: currentUser.name,
@@ -483,8 +469,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       requesterPhone: currentUser.phone,
       createdAt: now,
       updatedAt: now,
-      receiptUrl: reqData.receiptUrl,
-      receiptName: reqData.receiptName,
       history: [
         {
           id: `step-${Date.now()}`,

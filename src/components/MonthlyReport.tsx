@@ -1,24 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { formatBirr, formatDate, getStatusDisplay } from '../utils/format';
-import { CATEGORY_DETAILS } from '../data/mockData';
+import { formatBirr, formatDate } from '../utils/format';
 import {
   FileText,
   Download,
-  Printer,
   Calendar,
   Building2,
   TrendingDown,
-  PieChart,
-  CheckCircle,
   FileSpreadsheet,
-  ArrowDownRight,
-  Filter,
+  Coins,
+  CreditCard,
 } from 'lucide-react';
-import { ExpenseCategory, BranchLocation } from '../types';
+import { BranchLocation } from '../types';
 
 export const MonthlyReport: React.FC = () => {
-  const { requisitions, setSelectedRequisition, setVoucherToPrint, setIsPrintModalOpen } = useApp();
+  const { requisitions, setSelectedRequisition } = useApp();
 
   const [selectedMonth, setSelectedMonth] = useState<'2026-10' | '2026-09' | 'all'>('2026-10');
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
@@ -41,28 +37,6 @@ export const MonthlyReport: React.FC = () => {
   const averageVoucherBirr = useMemo(() => {
     if (filteredDisbursed.length === 0) return 0;
     return totalBirrSpent / filteredDisbursed.length;
-  }, [filteredDisbursed, totalBirrSpent]);
-
-  // Category breakdown
-  const categoryStats = useMemo(() => {
-    const map: Record<string, { total: number; count: number }> = {};
-
-    filteredDisbursed.forEach((r) => {
-      if (!map[r.category]) {
-        map[r.category] = { total: 0, count: 0 };
-      }
-      map[r.category].total += r.amount;
-      map[r.category].count += 1;
-    });
-
-    return Object.entries(map)
-      .map(([cat, val]) => ({
-        category: cat as ExpenseCategory,
-        total: val.total,
-        count: val.count,
-        percent: totalBirrSpent > 0 ? (val.total / totalBirrSpent) * 100 : 0,
-      }))
-      .sort((a, b) => b.total - a.total);
   }, [filteredDisbursed, totalBirrSpent]);
 
   // Branch breakdown
@@ -105,11 +79,9 @@ export const MonthlyReport: React.FC = () => {
     const headers = [
       'Voucher Number',
       'Date Disbursed',
-      'Expense Title',
-      'Category',
+      'Expense Purpose',
       'Branch',
       'Requester',
-      'Payee / Vendor',
       'Payment Method',
       'Payment Reference',
       'Amount (ETB / Birr)',
@@ -119,10 +91,8 @@ export const MonthlyReport: React.FC = () => {
       `"${r.voucherNumber}"`,
       `"${r.updatedAt}"`,
       `"${r.title.replace(/"/g, '""')}"`,
-      `"${CATEGORY_DETAILS[r.category]?.name || r.category}"`,
       `"${r.branch}"`,
       `"${r.requesterName}"`,
-      `"${r.payee.replace(/"/g, '""')}"`,
       `"${r.paymentMethod}"`,
       `"${r.paymentReference || ''}"`,
       r.amount.toFixed(2),
@@ -156,7 +126,7 @@ export const MonthlyReport: React.FC = () => {
       <div className="bg-white p-4 sm:p-6 rounded-2xl border border-stone-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-800">
+            <div className="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center text-[#0284C7]">
               <FileSpreadsheet className="w-4 h-4" />
             </div>
             <h1 className="text-xl font-bold text-stone-900">
@@ -194,7 +164,8 @@ export const MonthlyReport: React.FC = () => {
               <option value="Bole Medhanialem Flagship">Bole Medhanialem</option>
               <option value="Piassa Kids Corner">Piassa Kids Corner</option>
               <option value="Kazanchis Atelier">Kazanchis Atelier</option>
-              <option value="Head Office / Warehouse">Head Office</option>
+              <option value="CMC Kids Boutique">CMC Kids Boutique</option>
+              <option value="Head Office / Warehouse">Head Office / Warehouse</option>
             </select>
           </div>
 
@@ -212,14 +183,14 @@ export const MonthlyReport: React.FC = () => {
       {/* Main Birr Spend Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Total Birr Spent */}
-        <div className="bg-gradient-to-br from-amber-600 via-amber-700 to-amber-800 text-white rounded-2xl p-5 shadow-sm">
-          <div className="text-xs uppercase tracking-wider text-amber-200 font-bold">
+        <div className="bg-gradient-to-br from-[#0284C7] via-[#00AEEF] to-[#38BDF8] text-white rounded-2xl p-5 shadow-sm">
+          <div className="text-xs uppercase tracking-wider text-sky-100 font-bold">
             Total Petty Cash Spent ({getMonthLabel(selectedMonth).split(' ')[0]})
           </div>
           <div className="text-3xl font-black font-mono mt-2">
             {formatBirr(totalBirrSpent)}
           </div>
-          <div className="text-xs text-amber-100/90 mt-2 flex items-center gap-1">
+          <div className="text-xs text-sky-100/90 mt-2 flex items-center gap-1">
             <span>Across {filteredDisbursed.length} disbursed cash vouchers</span>
           </div>
         </div>
@@ -237,72 +208,28 @@ export const MonthlyReport: React.FC = () => {
           </div>
         </div>
 
-        {/* Highest Spend Category */}
+        {/* Top Spending Branch */}
         <div className="bg-white rounded-2xl p-5 border border-stone-200 shadow-xs">
           <div className="text-xs uppercase tracking-wider text-stone-500 font-bold">
-            Top Spending Category
+            Top Spending Branch
           </div>
           <div className="text-lg font-bold text-stone-900 mt-2 truncate">
-            {categoryStats[0]
-              ? CATEGORY_DETAILS[categoryStats[0].category]?.name
-              : 'None'}
+            {branchStats[0] ? branchStats[0].branch : 'None'}
           </div>
-          <div className="text-xs text-amber-700 font-semibold font-mono mt-1">
-            {categoryStats[0] ? formatBirr(categoryStats[0].total) : 'Br 0.00'} (
-            {categoryStats[0]?.percent.toFixed(1)}% of total)
+          <div className="text-xs text-[#0284C7] font-semibold font-mono mt-1">
+            {branchStats[0] ? formatBirr(branchStats[0].total) : 'Br 0.00'} (
+            {branchStats[0]?.percent.toFixed(1)}% of total)
           </div>
         </div>
       </div>
 
-      {/* Breakdown Section: Categories & Branches */}
+      {/* Breakdown Section: Branches & Payment Methods */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Category Breakdown Table */}
-        <div className="bg-white rounded-2xl border border-stone-200 shadow-xs p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-stone-900 flex items-center gap-2">
-              <PieChart className="w-4 h-4 text-amber-600" />
-              Expenditure by Expense Category
-            </h2>
-            <span className="text-xs text-stone-400 font-mono font-medium">In Birr (ETB)</span>
-          </div>
-
-          <div className="space-y-3.5">
-            {categoryStats.map((item) => {
-              const meta = CATEGORY_DETAILS[item.category];
-              return (
-                <div key={item.category}>
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="font-semibold text-stone-800">
-                      {meta?.name || item.category}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-stone-500">{item.count} bills</span>
-                      <span className="font-bold text-stone-900 font-mono">
-                        {formatBirr(item.total)}
-                      </span>
-                      <span className="text-stone-400 w-10 text-right">
-                        {item.percent.toFixed(0)}%
-                      </span>
-                    </div>
-                  </div>
-                  <div className="w-full h-2 bg-stone-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-amber-600 rounded-full"
-                      style={{ width: `${item.percent}%` }}
-                    ></div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
         {/* Branch / Location Breakdown */}
         <div className="bg-white rounded-2xl border border-stone-200 shadow-xs p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-stone-900 flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-amber-600" />
+              <Building2 className="w-4 h-4 text-[#00AEEF]" />
               Expenditure by Kurtta Branch / Workshop
             </h2>
             <span className="text-xs text-stone-400 font-mono font-medium">Distribution</span>
@@ -327,35 +254,45 @@ export const MonthlyReport: React.FC = () => {
                 </div>
                 <div className="w-full h-2 bg-stone-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-stone-800 rounded-full"
+                    className="h-full bg-[#00AEEF] rounded-full"
                     style={{ width: `${item.percent}%` }}
                   ></div>
                 </div>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Payment Method split */}
-          <div className="mt-6 pt-4 border-t border-stone-100">
-            <h3 className="text-xs font-bold text-stone-700 uppercase tracking-wider mb-2.5">
-              Payment Method Breakdown
-            </h3>
-            <div className="grid grid-cols-3 gap-2 text-center">
+        {/* Payment Method split */}
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-xs p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-stone-900 flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-[#00AEEF]" />
+                Payment Method Breakdown
+              </h2>
+              <span className="text-xs text-stone-400 font-mono font-medium">By Channel</span>
+            </div>
+
+            <div className="space-y-3">
               {paymentStats.map((p) => (
-                <div key={p.method} className="bg-stone-50 p-2.5 rounded-xl border border-stone-100">
-                  <div className="text-[11px] font-medium text-stone-500">{p.method}</div>
-                  <div className="text-xs font-bold text-stone-900 font-mono mt-0.5">
-                    {formatBirr(p.total)}
+                <div key={p.method} className="bg-stone-50 p-3 rounded-xl border border-stone-100 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-stone-900">{p.method}</div>
+                    <div className="text-[10px] text-stone-500 mt-0.5">
+                      {p.percent.toFixed(1)}% of total outflows
+                    </div>
                   </div>
-                  <div className="text-[10px] text-amber-700 font-semibold mt-0.5">
-                    {p.percent.toFixed(0)}%
+                  <div className="text-right">
+                    <div className="text-sm font-extrabold text-[#0284C7] font-mono">
+                      {formatBirr(p.total)}
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
-
       </div>
 
       {/* Itemized Disbursed Vouchers Table for this Month */}
@@ -380,7 +317,7 @@ export const MonthlyReport: React.FC = () => {
               className="p-4 hover:bg-stone-50 transition-colors cursor-pointer"
             >
               <div className="flex items-start justify-between">
-                <span className="text-xs font-mono font-bold text-amber-900">
+                <span className="text-xs font-mono font-bold text-[#0284C7]">
                   {r.voucherNumber}
                 </span>
                 <span className="text-sm font-extrabold text-stone-900 font-mono">
@@ -389,9 +326,9 @@ export const MonthlyReport: React.FC = () => {
               </div>
               <h3 className="text-xs font-semibold text-stone-800 mt-1">{r.title}</h3>
               <div className="text-[11px] text-stone-500 mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5">
-                <span>{CATEGORY_DETAILS[r.category]?.name}</span>
-                <span>·</span>
                 <span>{r.branch.split(' ')[0]}</span>
+                <span>·</span>
+                <span>{r.paymentMethod}</span>
                 <span>·</span>
                 <span>{formatDate(r.updatedAt)}</span>
               </div>
@@ -406,12 +343,11 @@ export const MonthlyReport: React.FC = () => {
               <tr>
                 <th className="py-3 px-4">Voucher #</th>
                 <th className="py-3 px-4">Date</th>
-                <th className="py-3 px-4">Expense Description</th>
-                <th className="py-3 px-4">Category</th>
+                <th className="py-3 px-4">Expense Purpose</th>
                 <th className="py-3 px-4">Branch</th>
-                <th className="py-3 px-4">Payee / Vendor</th>
+                <th className="py-3 px-4">Payment Method</th>
+                <th className="py-3 px-4">Reference #</th>
                 <th className="py-3 px-4 text-right">Amount (Birr)</th>
-                <th className="py-3 px-4 text-center">Receipt</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
@@ -421,7 +357,7 @@ export const MonthlyReport: React.FC = () => {
                   onClick={() => setSelectedRequisition(r)}
                   className="hover:bg-stone-50/80 transition-colors cursor-pointer"
                 >
-                  <td className="py-3 px-4 font-mono font-bold text-amber-900">
+                  <td className="py-3 px-4 font-mono font-bold text-[#0284C7]">
                     {r.voucherNumber}
                   </td>
                   <td className="py-3 px-4 text-stone-600 whitespace-nowrap">
@@ -431,23 +367,14 @@ export const MonthlyReport: React.FC = () => {
                     {r.title}
                   </td>
                   <td className="py-3 px-4 text-stone-600 whitespace-nowrap">
-                    {CATEGORY_DETAILS[r.category]?.name}
-                  </td>
-                  <td className="py-3 px-4 text-stone-600 whitespace-nowrap">
                     {r.branch.split(' ')[0]}
                   </td>
-                  <td className="py-3 px-4 text-stone-700 whitespace-nowrap">{r.payee}</td>
+                  <td className="py-3 px-4 text-stone-700 whitespace-nowrap">{r.paymentMethod}</td>
+                  <td className="py-3 px-4 text-stone-600 font-mono text-[11px] whitespace-nowrap">
+                    {r.paymentReference || '—'}
+                  </td>
                   <td className="py-3 px-4 font-mono font-bold text-stone-900 text-right whitespace-nowrap">
                     {formatBirr(r.amount)}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    {r.receiptUrl ? (
-                      <span className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full">
-                        Attached
-                      </span>
-                    ) : (
-                      <span className="text-[11px] text-stone-400">None</span>
-                    )}
                   </td>
                 </tr>
               ))}

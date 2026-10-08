@@ -1,30 +1,23 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { formatBirr, formatDate, getRoleDisplay, getStatusDisplay } from '../utils/format';
-import { CATEGORY_DETAILS } from '../data/mockData';
 import {
   Wallet,
   TrendingDown,
   Clock,
-  CheckCircle2,
-  AlertCircle,
   Plus,
-  ArrowUpRight,
   ShieldAlert,
   Coins,
   Receipt,
-  FileSpreadsheet,
   Building2,
   ChevronRight,
   Eye,
   Check,
   Send,
-  Zap,
   FileCheck,
-  ShieldCheck,
   CheckCircle,
 } from 'lucide-react';
-import { Requisition } from '../types';
+import { Requisition, BranchLocation } from '../types';
 
 export const Dashboard: React.FC = () => {
   const {
@@ -51,11 +44,9 @@ export const Dashboard: React.FC = () => {
   // Filter items needing current user's direct attention
   const actionRequiredList = requisitions.filter((r) => {
     if (currentUser.role === 'finance') {
-      // Finance has 2 action points: Check new staff requests (pending_finance) and disburse approved ones (approved)
       return r.status === 'pending_finance' || r.status === 'approved';
     }
     if (currentUser.role === 'general_manager') {
-      // GM has executive approval authority for Finance-verified requests
       return r.status === 'pending_gm';
     }
     return false;
@@ -69,17 +60,16 @@ export const Dashboard: React.FC = () => {
     .filter((r) => r.status === 'disbursed')
     .slice(0, 4);
 
-  // Category breakdown for this month
-  const categoryTotals: Record<string, number> = {};
+  // Branch breakdown for this month
+  const branchTotals: Record<string, number> = {};
   requisitions
     .filter((r) => r.status === 'disbursed' && r.updatedAt.startsWith('2026-10'))
     .forEach((r) => {
-      categoryTotals[r.category] = (categoryTotals[r.category] || 0) + r.amount;
+      branchTotals[r.branch] = (branchTotals[r.branch] || 0) + r.amount;
     });
 
-  const sortedCategories = Object.entries(categoryTotals)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 4);
+  const sortedBranches = Object.entries(branchTotals)
+    .sort(([, a], [, b]) => b - a);
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-28 md:pb-12">
@@ -344,7 +334,7 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* ============================================================== */}
-      {/* 2-COLUMN LAYOUT: Recent Requisitions & Live Outflow Feed        */}
+      {/* 2-COLUMN LAYOUT: Recent Requisitions & Outflow by Branch        */}
       {/* ============================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column (2 Cols): Recent Requisitions */}
@@ -405,23 +395,25 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Outflow by Category & Quick Stats */}
+        {/* Right Column: Outflow by Store Branch & Live Feed */}
         <div className="space-y-6">
-          {/* Top Spending Categories */}
+          {/* Outflow by Store Branch */}
           <div className="bg-white rounded-2xl p-4 sm:p-5 border border-stone-200 shadow-xs">
-            <h3 className="text-sm font-bold text-stone-900 mb-3">Top Expenses by Category</h3>
-            {sortedCategories.length === 0 ? (
+            <h3 className="text-sm font-bold text-stone-900 mb-3 flex items-center gap-1.5">
+              <Building2 className="w-4 h-4 text-[#00AEEF]" />
+              <span>Outflow by Store Branch</span>
+            </h3>
+            {sortedBranches.length === 0 ? (
               <p className="text-xs text-stone-400 py-3 text-center">No disbursements this month</p>
             ) : (
               <div className="space-y-3">
-                {sortedCategories.map(([catKey, total]) => {
-                  const cat = CATEGORY_DETAILS[catKey as keyof typeof CATEGORY_DETAILS];
+                {sortedBranches.map(([branchName, total]) => {
                   const percent = liveSpentThisMonth > 0 ? (total / liveSpentThisMonth) * 100 : 0;
 
                   return (
-                    <div key={catKey} className="space-y-1">
+                    <div key={branchName} className="space-y-1">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-medium text-stone-800">{cat?.name || catKey}</span>
+                        <span className="font-medium text-stone-800 truncate max-w-[180px]">{branchName}</span>
                         <span className="font-bold text-stone-900 font-mono">
                           {formatBirr(total)}
                         </span>
@@ -459,7 +451,7 @@ export const Dashboard: React.FC = () => {
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-bold text-stone-900 truncate">{req.title}</div>
                       <div className="text-[10px] text-stone-500 mt-0.5">
-                        {req.paymentMethod} · {req.paymentReference}
+                        {req.paymentMethod} {req.paymentReference ? `· ${req.paymentReference}` : ''}
                       </div>
                     </div>
                     <div className="text-right pl-2">

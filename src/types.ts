@@ -1,16 +1,5 @@
 export type Role = 'staff' | 'finance' | 'general_manager';
 
-export type ExpenseCategory =
-  | 'fabric_accessories'
-  | 'packaging_tags'
-  | 'local_courier'
-  | 'refreshments'
-  | 'cleaning_sanitation'
-  | 'store_maintenance'
-  | 'stationery_pos'
-  | 'utilities_airtime'
-  | 'other';
-
 export type BranchLocation =
   | 'Bole Medhanialem Flagship'
   | 'Piassa Kids Corner'
@@ -56,14 +45,11 @@ export interface Requisition {
   id: string;
   voucherNumber: string; // e.g. PCV-2026-104
   title: string;
-  category: ExpenseCategory;
   amount: number; // in Birr (ETB)
   branch: BranchLocation;
-  payee: string; // Vendor or person receiving payment
   paymentMethod: PaymentMethod;
   paymentReference?: string; // e.g. Telebirr Txn ID or Safe receipt #
   description: string;
-  urgency: 'Normal' | 'Urgent' | 'Emergency';
   status: RequisitionStatus;
   requesterId: string;
   requesterName: string;
@@ -71,8 +57,6 @@ export interface Requisition {
   requesterPhone: string;
   createdAt: string;
   updatedAt: string;
-  receiptUrl?: string;
-  receiptName?: string;
   rejectionReason?: string;
   history: ApprovalStep[];
 }

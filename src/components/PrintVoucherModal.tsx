@@ -2,7 +2,6 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 import { Logo } from './Logo';
 import { formatBirr, formatDateOnly } from '../utils/format';
-import { CATEGORY_DETAILS } from '../data/mockData';
 import { X, Printer, CheckCircle } from 'lucide-react';
 
 export const PrintVoucherModal: React.FC = () => {
@@ -11,7 +10,6 @@ export const PrintVoucherModal: React.FC = () => {
   if (!isPrintModalOpen || !voucherToPrint) return null;
 
   const req = voucherToPrint;
-  const cat = CATEGORY_DETAILS[req.category];
 
   const handlePrint = () => {
     window.print();
@@ -62,7 +60,7 @@ export const PrintVoucherModal: React.FC = () => {
             </div>
 
             <div className="text-right">
-              <div className="text-xs font-mono font-black uppercase tracking-wider text-amber-800">
+              <div className="text-xs font-mono font-black uppercase tracking-wider text-[#0284C7]">
                 PETTY CASH VOUCHER
               </div>
               <div className="text-base font-mono font-black text-stone-900 mt-0.5">
@@ -78,28 +76,21 @@ export const PrintVoucherModal: React.FC = () => {
           <div className="grid grid-cols-2 gap-4 text-xs border border-stone-300 p-4 rounded-xl bg-stone-50/50">
             <div>
               <span className="text-stone-500 font-semibold block uppercase tracking-wider text-[10px]">
-                Paid To (Payee / Vendor):
-              </span>
-              <span className="text-sm font-bold text-stone-900 block mt-0.5">{req.payee}</span>
-            </div>
-
-            <div>
-              <span className="text-stone-500 font-semibold block uppercase tracking-wider text-[10px]">
-                Branch / Department:
+                Branch / Location:
               </span>
               <span className="text-sm font-bold text-stone-900 block mt-0.5">{req.branch}</span>
             </div>
 
             <div>
               <span className="text-stone-500 font-semibold block uppercase tracking-wider text-[10px]">
-                Expense Classification:
+                Requester / Staff:
               </span>
-              <span className="text-xs font-bold text-stone-800 block mt-0.5">
-                {cat?.name || req.category}
+              <span className="text-sm font-bold text-stone-900 block mt-0.5">
+                {req.requesterName} ({req.requesterRole})
               </span>
             </div>
 
-            <div>
+            <div className="col-span-2">
               <span className="text-stone-500 font-semibold block uppercase tracking-wider text-[10px]">
                 Payment Mode & Ref:
               </span>
@@ -127,7 +118,7 @@ export const PrintVoucherModal: React.FC = () => {
                 Total Amount in Ethiopian Birr (ETB)
               </span>
               <div className="text-xs text-stone-500 italic mt-0.5">
-                Paid from store petty cash safe box
+                Authorized Kurtta store petty cash payment
               </div>
             </div>
             <div className="text-2xl font-black font-mono text-stone-900">
@@ -145,7 +136,7 @@ export const PrintVoucherModal: React.FC = () => {
               {/* Prepared By */}
               <div className="border border-stone-300 p-2.5 rounded-lg flex flex-col justify-between h-24">
                 <span className="text-[10px] text-stone-500 uppercase font-semibold">
-                  Prepared By (Requester)
+                  1. Staff Requester
                 </span>
                 <div className="text-[11px] font-bold text-stone-900 truncate">
                   {req.requesterName}
@@ -155,44 +146,45 @@ export const PrintVoucherModal: React.FC = () => {
                 </div>
               </div>
 
-              {/* Checked By */}
+              {/* Checked By Finance */}
               <div className="border border-stone-300 p-2.5 rounded-lg flex flex-col justify-between h-24">
                 <span className="text-[10px] text-stone-500 uppercase font-semibold">
-                  Store / Branch Manager
+                  2. Finance Check
                 </span>
-                <div className="text-[11px] font-bold text-stone-900">Dawit Bekele</div>
+                <div className="text-[11px] font-bold text-stone-900 truncate">
+                  Bethelhem Haile
+                </div>
                 <div className="border-t border-dashed border-stone-400 pt-1 text-[9px] text-stone-400">
-                  Signature & Date
+                  Signature
                 </div>
               </div>
 
-              {/* Approved / Custodian */}
+              {/* Approved By General Manager */}
               <div className="border border-stone-300 p-2.5 rounded-lg flex flex-col justify-between h-24">
                 <span className="text-[10px] text-stone-500 uppercase font-semibold">
-                  Finance Custodian
+                  3. General Manager
                 </span>
-                <div className="text-[11px] font-bold text-stone-900">Bethelhem Haile</div>
+                <div className="text-[11px] font-bold text-stone-900 truncate">
+                  Solomon Girma
+                </div>
                 <div className="border-t border-dashed border-stone-400 pt-1 text-[9px] text-stone-400">
-                  Signature & Seal
+                  Approval Stamp
                 </div>
               </div>
 
-              {/* Received By */}
+              {/* Disbursed By Finance */}
               <div className="border border-stone-300 p-2.5 rounded-lg flex flex-col justify-between h-24">
                 <span className="text-[10px] text-stone-500 uppercase font-semibold">
-                  Cash Received By
+                  4. Finance Payout
                 </span>
-                <div className="text-[11px] font-bold text-stone-900 truncate">{req.payee}</div>
+                <div className="text-[11px] font-bold text-stone-900 truncate">
+                  Bethelhem Haile
+                </div>
                 <div className="border-t border-dashed border-stone-400 pt-1 text-[9px] text-stone-400">
-                  Receiver Signature
+                  Payment Paid
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Footer note */}
-          <div className="text-[9px] text-stone-400 text-center pt-2">
-            Kurtta Kids Clothes Financial Internal Controls · All disbursements backed by genuine receipts
           </div>
         </div>
       </div>

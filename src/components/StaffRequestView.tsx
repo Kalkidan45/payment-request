@@ -1,20 +1,14 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatBirr, formatDate, getStatusDisplay } from '../utils/format';
-import { CATEGORY_DETAILS } from '../data/mockData';
 import {
   Plus,
   Receipt,
   Clock,
   CheckCircle2,
   Building2,
-  Calendar,
-  AlertCircle,
-  FileCheck,
   ChevronRight,
-  ShieldCheck,
   Search,
-  Sparkles,
 } from 'lucide-react';
 
 export const StaffRequestView: React.FC = () => {
@@ -45,8 +39,7 @@ export const StaffRequestView: React.FC = () => {
       const q = search.toLowerCase();
       const matchTitle = r.title.toLowerCase().includes(q);
       const matchVouch = r.voucherNumber.toLowerCase().includes(q);
-      const matchPayee = r.payee.toLowerCase().includes(q);
-      if (!matchTitle && !matchVouch && !matchPayee) return false;
+      if (!matchTitle && !matchVouch) return false;
     }
     return true;
   });
@@ -88,7 +81,7 @@ export const StaffRequestView: React.FC = () => {
         </button>
       </div>
 
-      {/* Quick Summary of Own Requests (Compact on Mobile) */}
+      {/* Quick Summary of Own Requests */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
         <div className="bg-white p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-stone-200 shadow-xs">
           <div className="flex items-center justify-between text-[11px] sm:text-xs text-stone-500 font-medium">
@@ -99,7 +92,7 @@ export const StaffRequestView: React.FC = () => {
             {pendingCount}
           </div>
           <div className="text-[10px] sm:text-[11px] text-stone-400 mt-0.5 truncate">
-            Awaiting GM / Payout
+            In Approval Pipeline
           </div>
         </div>
 
@@ -132,7 +125,7 @@ export const StaffRequestView: React.FC = () => {
 
       {/* Requisitions List Card */}
       <div className="bg-white rounded-2xl sm:rounded-3xl border border-stone-200 shadow-xs overflow-hidden">
-        {/* Mobile-friendly Search Header */}
+        {/* Search Header */}
         <div className="p-3.5 sm:p-5 border-b border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-bold text-stone-900">My Requisition Vouchers</h2>
@@ -148,14 +141,14 @@ export const StaffRequestView: React.FC = () => {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by voucher #, title, or payee..."
+                placeholder="Search by voucher # or purpose title..."
                 className="w-full pl-9 pr-3 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl focus:outline-hidden focus:border-[#00AEEF] focus:bg-white text-stone-900 transition-colors"
               />
             </div>
           </div>
         </div>
 
-        {/* Scrollable Filter Tabs (Smooth horizontal touch swipe) */}
+        {/* Scrollable Filter Tabs */}
         <div className="bg-stone-50 px-3 sm:px-4 py-2 border-b border-stone-200 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
           {[
             { id: 'all', label: 'All Requests' },
@@ -199,7 +192,6 @@ export const StaffRequestView: React.FC = () => {
           <div className="divide-y divide-stone-100">
             {filtered.map((req) => {
               const status = getStatusDisplay(req.status);
-              const cat = CATEGORY_DETAILS[req.category];
 
               return (
                 <div
@@ -208,12 +200,8 @@ export const StaffRequestView: React.FC = () => {
                   className="p-3.5 sm:p-4 hover:bg-sky-50/40 active:bg-sky-50 transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
                 >
                   <div className="flex items-start gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                        cat ? cat.bg : 'bg-stone-100'
-                      }`}
-                    >
-                      <Receipt className={`w-5 h-5 ${cat ? cat.color : 'text-stone-700'}`} />
+                    <div className="w-10 h-10 rounded-xl bg-sky-50 text-[#00AEEF] flex items-center justify-center shrink-0">
+                      <Receipt className="w-5 h-5" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -231,7 +219,7 @@ export const StaffRequestView: React.FC = () => {
                         {req.title}
                       </h4>
                       <div className="text-[11px] text-stone-500 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                        <span className="truncate max-w-[140px]">Payee: {req.payee}</span>
+                        <span>{req.branch}</span>
                         <span>·</span>
                         <span>{formatDate(req.createdAt)}</span>
                       </div>

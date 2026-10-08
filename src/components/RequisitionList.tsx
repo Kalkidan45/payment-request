@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatBirr, formatDate, getStatusDisplay } from '../utils/format';
-import { CATEGORY_DETAILS } from '../data/mockData';
 import {
   Search,
   SlidersHorizontal,
@@ -11,7 +10,6 @@ import {
   Coins,
   Send,
   Clock,
-  Lock,
   ChevronRight,
   Receipt,
   FileCheck,
@@ -35,7 +33,6 @@ export const RequisitionList: React.FC = () => {
     disburseRequisition,
   } = useApp();
 
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [branchFilter, setBranchFilter] = useState<string>('all');
   const [showFiltersMobile, setShowFiltersMobile] = useState(false);
 
@@ -53,11 +50,6 @@ export const RequisitionList: React.FC = () => {
         }
       }
 
-      // Category filter
-      if (categoryFilter !== 'all' && r.category !== categoryFilter) {
-        return false;
-      }
-
       // Branch filter
       if (branchFilter !== 'all' && r.branch !== branchFilter) {
         return false;
@@ -68,17 +60,16 @@ export const RequisitionList: React.FC = () => {
         const q = searchQuery.toLowerCase();
         const matchTitle = r.title.toLowerCase().includes(q);
         const matchVoucher = r.voucherNumber.toLowerCase().includes(q);
-        const matchPayee = r.payee.toLowerCase().includes(q);
         const matchRequester = r.requesterName.toLowerCase().includes(q);
         const matchBranch = r.branch.toLowerCase().includes(q);
-        if (!matchTitle && !matchVoucher && !matchPayee && !matchRequester && !matchBranch) {
+        if (!matchTitle && !matchVoucher && !matchRequester && !matchBranch) {
           return false;
         }
       }
 
       return true;
     });
-  }, [requisitions, filterStatus, categoryFilter, branchFilter, searchQuery]);
+  }, [requisitions, filterStatus, branchFilter, searchQuery]);
 
   return (
     <div className="space-y-4 sm:space-y-5 pb-28 md:pb-12">
@@ -110,7 +101,7 @@ export const RequisitionList: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by voucher #, purpose, payee, or requester..."
+              placeholder="Search by voucher #, purpose title, or requester..."
               className="w-full pl-9 pr-8 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 focus:outline-hidden focus:border-[#00AEEF] focus:bg-white transition-colors"
             />
             {searchQuery && (
@@ -123,30 +114,8 @@ export const RequisitionList: React.FC = () => {
             )}
           </div>
 
-          {/* Quick Filter Toggle on Mobile */}
-          <button
-            onClick={() => setShowFiltersMobile(!showFiltersMobile)}
-            className="sm:hidden flex items-center justify-center gap-1.5 py-2 px-3 bg-stone-100 text-stone-700 rounded-xl text-xs font-medium cursor-pointer"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Category & Branch Filters</span>
-          </button>
-
-          {/* Category Dropdown (Desktop) */}
+          {/* Branch Filter Dropdown (Desktop) */}
           <div className="hidden sm:flex items-center gap-2">
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="py-2 px-3 bg-stone-50 border border-stone-200 rounded-xl text-xs text-stone-800 focus:outline-hidden cursor-pointer"
-            >
-              <option value="all">All Categories</option>
-              {Object.entries(CATEGORY_DETAILS).map(([key, item]) => (
-                <option key={key} value={key}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-
             <select
               value={branchFilter}
               onChange={(e) => setBranchFilter(e.target.value)}
@@ -164,20 +133,7 @@ export const RequisitionList: React.FC = () => {
 
         {/* Mobile Filter Sheet */}
         {showFiltersMobile && (
-          <div className="sm:hidden grid grid-cols-2 gap-2 pt-2 border-t border-stone-100">
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full py-2 px-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs text-stone-800"
-            >
-              <option value="all">All Categories</option>
-              {Object.entries(CATEGORY_DETAILS).map(([key, item]) => (
-                <option key={key} value={key}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-
+          <div className="sm:hidden grid grid-cols-1 gap-2 pt-2 border-t border-stone-100">
             <select
               value={branchFilter}
               onChange={(e) => setBranchFilter(e.target.value)}
@@ -266,7 +222,6 @@ export const RequisitionList: React.FC = () => {
           <div className="divide-y divide-stone-100">
             {filteredRequisitions.map((req) => {
               const status = getStatusDisplay(req.status);
-              const cat = CATEGORY_DETAILS[req.category];
 
               return (
                 <div
@@ -305,8 +260,6 @@ export const RequisitionList: React.FC = () => {
                           By: {req.requesterName} ({req.requesterRole})
                         </span>
                         <span>·</span>
-                        <span>Payee: {req.payee}</span>
-                        <span>·</span>
                         <span>{formatDate(req.createdAt)}</span>
                       </div>
                     </div>
@@ -338,7 +291,7 @@ export const RequisitionList: React.FC = () => {
                                 )
                               }
                               className="bg-[#00AEEF] hover:bg-[#0284C7] text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
-                              title="Verify receipt & send to General Manager"
+                              title="Verify & send to General Manager"
                             >
                               <Send className="w-3.5 h-3.5" />
                               <span>Verify & Send to GM</span>
@@ -381,7 +334,7 @@ export const RequisitionList: React.FC = () => {
                           {req.status === 'pending_finance' && (
                             <span
                               className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg flex items-center gap-1 cursor-default"
-                              title="Finance team is checking receipts and verifying request."
+                              title="Finance team is checking and verifying request."
                             >
                               <Clock className="w-3 h-3 text-amber-500" />
                               <span>Pending Finance</span>

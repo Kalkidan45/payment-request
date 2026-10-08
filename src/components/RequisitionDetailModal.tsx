@@ -1,25 +1,20 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { formatBirr, formatDate, getStatusDisplay, getRoleDisplay } from '../utils/format';
-import { CATEGORY_DETAILS } from '../data/mockData';
+import { formatBirr, formatDate, getStatusDisplay } from '../utils/format';
 import {
   X,
   Printer,
   Receipt,
-  User,
   Building2,
   Calendar,
   CheckCircle,
   XCircle,
   Coins,
   Send,
-  ArrowRight,
-  ExternalLink,
   ShieldCheck,
   Check,
   Clock,
   FileCheck,
-  AlertCircle,
 } from 'lucide-react';
 import { PaymentMethod } from '../types';
 
@@ -43,13 +38,11 @@ export const RequisitionDetailModal: React.FC = () => {
     selectedRequisition?.paymentMethod || 'Physical Cash'
   );
   const [disburseRef, setDisburseRef] = useState('');
-  const [showImageZoom, setShowImageZoom] = useState(false);
 
   if (!selectedRequisition) return null;
 
   const req = selectedRequisition;
   const status = getStatusDisplay(req.status);
-  const cat = CATEGORY_DETAILS[req.category];
 
   // Stage 2: Finance checks and forwards to GM
   const handleVerify = () => {
@@ -96,7 +89,6 @@ export const RequisitionDetailModal: React.FC = () => {
   const isStep2Done = req.status === 'pending_gm' || req.status === 'approved' || req.status === 'disbursed';
   const isStep3Done = req.status === 'approved' || req.status === 'disbursed';
   const isStep4Done = req.status === 'disbursed';
-  const isRejected = req.status === 'rejected';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-900/70 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
@@ -248,7 +240,7 @@ export const RequisitionDetailModal: React.FC = () => {
                 {formatBirr(req.amount)}
               </div>
               <div className="text-xs text-stone-500 mt-0.5">
-                Preferred Method: <strong className="text-stone-800">{req.paymentMethod}</strong>
+                Payment Method: <strong className="text-stone-800">{req.paymentMethod}</strong>
                 {req.paymentReference && ` · Ref: ${req.paymentReference}`}
               </div>
             </div>
@@ -259,9 +251,6 @@ export const RequisitionDetailModal: React.FC = () => {
               </span>
               <div className="text-xs sm:text-sm font-bold text-stone-900 mt-0.5">
                 {req.branch}
-              </div>
-              <div className="text-xs text-sky-800 font-semibold mt-0.5">
-                {cat?.name || req.category}
               </div>
             </div>
           </div>
@@ -274,8 +263,10 @@ export const RequisitionDetailModal: React.FC = () => {
             </div>
 
             <div>
-              <span className="text-stone-400 font-medium">Payee / Beneficiary:</span>
-              <p className="font-semibold text-stone-900 mt-0.5 text-sm">{req.payee}</p>
+              <span className="text-stone-400 font-medium">Date Submitted:</span>
+              <p className="font-semibold text-stone-900 mt-0.5">
+                {formatDate(req.createdAt)}
+              </p>
             </div>
 
             <div>
@@ -287,18 +278,9 @@ export const RequisitionDetailModal: React.FC = () => {
             </div>
 
             <div>
-              <span className="text-stone-400 font-medium">Urgency & Date:</span>
+              <span className="text-stone-400 font-medium">Branch Location:</span>
               <p className="font-semibold text-stone-900 mt-0.5">
-                <span
-                  className={`inline-block w-2 h-2 rounded-full mr-1.5 ${
-                    req.urgency === 'Emergency'
-                      ? 'bg-rose-500'
-                      : req.urgency === 'Urgent'
-                      ? 'bg-amber-500'
-                      : 'bg-emerald-500'
-                  }`}
-                ></span>
-                {req.urgency} Priority · {formatDate(req.createdAt)}
+                {req.branch}
               </p>
             </div>
           </div>
@@ -307,7 +289,7 @@ export const RequisitionDetailModal: React.FC = () => {
           {req.description && (
             <div className="bg-stone-50 p-3.5 rounded-xl border border-stone-200/80 text-xs">
               <span className="text-stone-400 font-semibold uppercase text-[10px] tracking-wider block mb-1">
-                Business Justification & Details:
+                Operational Justification & Details:
               </span>
               <p className="text-stone-700 leading-relaxed">{req.description}</p>
             </div>
@@ -321,46 +303,6 @@ export const RequisitionDetailModal: React.FC = () => {
                 Reason for Rejection:
               </span>
               <p className="mt-0.5">{req.rejectionReason}</p>
-            </div>
-          )}
-
-          {/* Receipt / Invoice Attachment */}
-          {req.receiptUrl && (
-            <div>
-              <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="text-stone-400 font-medium">Attached Receipt / Bill Slip:</span>
-                <span className="text-stone-500 text-[11px]">{req.receiptName}</span>
-              </div>
-              <div
-                onClick={() => setShowImageZoom(true)}
-                className="relative group rounded-xl overflow-hidden border border-stone-200 cursor-pointer bg-stone-100 max-h-48 flex items-center justify-center"
-              >
-                <img
-                  src={req.receiptUrl}
-                  alt="Receipt Preview"
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform"
-                />
-                <div className="absolute inset-0 bg-stone-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold gap-1">
-                  <ExternalLink className="w-4 h-4" />
-                  <span>Click to Zoom Receipt</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Zoom Lightbox */}
-          {showImageZoom && (
-            <div
-              className="fixed inset-0 z-60 bg-black/80 flex items-center justify-center p-4 cursor-pointer"
-              onClick={() => setShowImageZoom(false)}
-            >
-              <div className="max-w-2xl max-h-[90vh] bg-white p-2 rounded-2xl">
-                <img
-                  src={req.receiptUrl}
-                  alt="Enlarged Receipt"
-                  className="w-full h-auto max-h-[85vh] object-contain rounded-xl"
-                />
-              </div>
             </div>
           )}
 
@@ -430,7 +372,7 @@ export const RequisitionDetailModal: React.FC = () => {
                               <span>Finance Review & Verification Required:</span>
                             </div>
                             <p className="text-[11px] text-amber-800 leading-relaxed">
-                              Check the receipt, vendor quotation, and budget allocation. Once checked, click below to verify and forward to the General Manager for final approval.
+                              Check the request details and budget allocation. Once checked, click below to verify and forward to the General Manager for final approval.
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -536,7 +478,7 @@ export const RequisitionDetailModal: React.FC = () => {
                             <span>Step 2: Awaiting Finance Check:</span>
                           </div>
                           <p className="text-[11px] text-amber-800 leading-relaxed">
-                            Finance team is checking the receipts and verifying the request. It will appear for your executive approval once verified.
+                            Finance team is checking the request. It will appear for your executive approval once verified.
                           </p>
                         </div>
                       )}
@@ -609,7 +551,7 @@ export const RequisitionDetailModal: React.FC = () => {
                     required
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}
-                    placeholder="e.g. Non-compliant receipt, exceeds petty cash allocation, or duplicate requisition..."
+                    placeholder="e.g. Non-compliant request, exceeds petty cash allocation, or duplicate requisition..."
                     className="w-full text-xs p-2.5 bg-white border border-rose-200 rounded-xl focus:outline-hidden focus:border-rose-500"
                   />
                   <div className="flex items-center gap-2">
