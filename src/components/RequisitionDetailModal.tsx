@@ -8,6 +8,7 @@ import {
   Building2,
   Calendar,
   CheckCircle,
+  CheckCircle2,
   XCircle,
   Coins,
   Send,
@@ -360,19 +361,19 @@ export const RequisitionDetailModal: React.FC = () => {
                     className="w-full text-base sm:text-xs p-2.5 bg-white border border-stone-200 rounded-xl focus:outline-hidden focus:border-[#00AEEF] min-h-[44px]"
                   />
 
-                  {/* 1. FINANCE TEAM ACTIONS */}
-                  {currentUser.role === 'finance' && (
-                    <div className="space-y-2.5">
-                      {req.status === 'pending_finance' && (
-                        /* STAGE 2: Finance checks request and sends to GM */
-                        <div className="space-y-2">
-                          <div className="p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs space-y-1">
-                            <div className="font-bold flex items-center gap-1.5">
-                              <FileCheck className="w-4 h-4 text-amber-700" />
-                              <span>Finance Review & Verification Required:</span>
+                  {/* 1. STAGE: PENDING_FINANCE (Awaiting Finance check & verification) */}
+                  {req.status === 'pending_finance' && (
+                    <div className="space-y-3">
+                      {currentUser.role === 'finance' && (
+                        /* Finance User Action */
+                        <div className="space-y-2.5">
+                          <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs space-y-1">
+                            <div className="font-bold flex items-center gap-1.5 text-amber-950">
+                              <ShieldCheck className="w-4 h-4 text-amber-700" />
+                              <span>Stage 2: Finance Review & Check</span>
                             </div>
                             <p className="text-[11px] text-amber-800 leading-relaxed">
-                              Check the request details and budget allocation. Once checked, click below to verify and forward to the General Manager for final approval.
+                              As Finance Officer, verify the expense justification and amount. Once checked, send it to the General Manager for executive approval.
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -381,7 +382,7 @@ export const RequisitionDetailModal: React.FC = () => {
                               className="flex-1 bg-[#00AEEF] hover:bg-[#0284C7] text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm transition-colors"
                             >
                               <Send className="w-4 h-4" />
-                              <span>Verify & Send to General Manager ({formatBirr(req.amount)})</span>
+                              <span>Check & Send to General Manager ({formatBirr(req.amount)})</span>
                             </button>
                             <button
                               onClick={() => setIsRejecting(true)}
@@ -393,36 +394,115 @@ export const RequisitionDetailModal: React.FC = () => {
                         </div>
                       )}
 
-                      {req.status === 'pending_gm' && (
-                        /* Request is currently waiting for GM approval */
-                        <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs space-y-1">
-                          <div className="font-bold flex items-center gap-1.5">
-                            <Clock className="w-4 h-4 text-indigo-700 animate-pulse" />
-                            <span>Forwarded to General Manager:</span>
+                      {currentUser.role === 'general_manager' && (
+                        /* General Manager waiting for Finance check */
+                        <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-900 text-xs space-y-1">
+                          <div className="font-bold flex items-center gap-1.5 text-amber-950">
+                            <Clock className="w-4 h-4 text-amber-600" />
+                            <span>Awaiting Finance Check:</span>
                           </div>
-                          <p className="text-[11px] text-indigo-800 leading-relaxed">
-                            You have verified this requisition. It is now awaiting executive approval from General Manager Solomon Girma.
+                          <p className="text-[11px] text-amber-800 leading-relaxed">
+                            The Finance team must check and verify this requisition before forwarding it to you for General Manager executive approval.
                           </p>
                         </div>
                       )}
 
-                      {req.status === 'approved' && (
-                        /* STAGE 4: GM approved! Finance is authorized to pay/disburse */
+                      {currentUser.role === 'staff' && (
+                        /* Requester status view */
+                        <div className="p-3 rounded-xl bg-sky-50 border border-sky-200 text-sky-900 text-xs space-y-1">
+                          <div className="font-bold flex items-center gap-1.5">
+                            <Clock className="w-4 h-4 text-[#00AEEF]" />
+                            <span>Status: Pending Finance Check</span>
+                          </div>
+                          <p className="text-[11px] text-sky-800 leading-relaxed">
+                            Your requisition has been submitted and is currently being checked by the Finance team.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 2. STAGE: PENDING_GM (Checked by Finance, awaiting GM approval) */}
+                  {req.status === 'pending_gm' && (
+                    <div className="space-y-3">
+                      {currentUser.role === 'general_manager' && (
+                        /* General Manager approval */
                         <div className="space-y-2.5">
-                          <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 p-3 rounded-xl text-xs space-y-1">
-                            <div className="font-bold flex items-center gap-1.5 text-emerald-900">
-                              <CheckCircle className="w-4 h-4 text-emerald-700" />
-                              <span>Approved by General Manager — Ready for Payout</span>
+                          <div className="p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs space-y-1">
+                            <div className="font-bold flex items-center gap-1.5 text-indigo-950">
+                              <ShieldCheck className="w-4 h-4 text-indigo-700" />
+                              <span>Stage 3: General Manager Executive Approval</span>
+                            </div>
+                            <p className="text-[11px] text-indigo-800 leading-relaxed">
+                              Finance has checked and forwarded this request. Approve the requisition to send it back to Finance for payout disbursement.
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={handleApprove}
+                              className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm transition-colors"
+                            >
+                              <Check className="w-4 h-4" />
+                              <span>Approve & Send to Finance for Payment ({formatBirr(req.amount)})</span>
+                            </button>
+                            <button
+                              onClick={() => setIsRejecting(true)}
+                              className="bg-white hover:bg-rose-50 border border-rose-200 text-rose-700 font-semibold py-2.5 px-3 rounded-xl text-xs cursor-pointer"
+                            >
+                              Decline
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {currentUser.role === 'finance' && (
+                        /* Finance waiting for GM approval */
+                        <div className="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-200 text-indigo-900 text-xs space-y-1">
+                          <div className="font-bold flex items-center gap-1.5 text-indigo-950">
+                            <Clock className="w-4 h-4 text-indigo-600" />
+                            <span>Checked & Forwarded to General Manager:</span>
+                          </div>
+                          <p className="text-[11px] text-indigo-800 leading-relaxed">
+                            You have checked this request and sent it to the General Manager. Once approved, it will return to you for payment disbursement.
+                          </p>
+                        </div>
+                      )}
+
+                      {currentUser.role === 'staff' && (
+                        /* Requester status view */
+                        <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs space-y-1">
+                          <div className="font-bold flex items-center gap-1.5">
+                            <Clock className="w-4 h-4 text-indigo-600" />
+                            <span>Status: Pending General Manager Approval</span>
+                          </div>
+                          <p className="text-[11px] text-indigo-800 leading-relaxed">
+                            Finance check completed! Your request is now with the General Manager for final executive approval.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 3. STAGE: APPROVED (Approved by GM, returned to Finance for payment) */}
+                  {req.status === 'approved' && (
+                    <div className="space-y-3">
+                      {currentUser.role === 'finance' && (
+                        /* Finance executes payment */
+                        <div className="space-y-2.5">
+                          <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 p-3.5 rounded-xl text-xs space-y-1">
+                            <div className="font-bold flex items-center gap-1.5 text-emerald-950">
+                              <Coins className="w-4 h-4 text-emerald-700" />
+                              <span>Stage 4: Finance Payment Disbursement</span>
                             </div>
                             <p className="text-[11px] text-emerald-800">
-                              The General Manager has approved this voucher. You are now authorized to disburse funds.
+                              The General Manager has approved this request and sent it back for payment. Select disbursement method and record payment reference to disburse funds.
                             </p>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
                               <label className="block text-[10px] uppercase font-bold text-stone-500 mb-1">
-                                Disbursement Method
+                                Payment Method
                               </label>
                               <select
                                 value={disburseMethod}
@@ -454,54 +534,7 @@ export const RequisitionDetailModal: React.FC = () => {
                               className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm transition-colors"
                             >
                               <Coins className="w-4 h-4" />
-                              <span>Disburse {formatBirr(req.amount)} to Payee</span>
-                            </button>
-                            <button
-                              onClick={() => setIsRejecting(true)}
-                              className="bg-white hover:bg-rose-50 border border-rose-200 text-rose-700 font-semibold py-2.5 px-3 rounded-xl text-xs cursor-pointer"
-                            >
-                              Decline
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* 2. GENERAL MANAGER ACTIONS */}
-                  {currentUser.role === 'general_manager' && (
-                    <div className="space-y-2.5">
-                      {req.status === 'pending_finance' && (
-                        <div className="p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs space-y-1">
-                          <div className="font-bold flex items-center gap-1.5">
-                            <Clock className="w-4 h-4 text-amber-700" />
-                            <span>Step 2: Awaiting Finance Check:</span>
-                          </div>
-                          <p className="text-[11px] text-amber-800 leading-relaxed">
-                            Finance team is checking the request. It will appear for your executive approval once verified.
-                          </p>
-                        </div>
-                      )}
-
-                      {req.status === 'pending_gm' && (
-                        /* STAGE 3: GM Approves and returns to Finance */
-                        <div className="space-y-2">
-                          <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs space-y-1">
-                            <div className="font-bold flex items-center gap-1.5">
-                              <ShieldCheck className="w-4 h-4 text-indigo-700" />
-                              <span>👑 General Manager Executive Approval:</span>
-                            </div>
-                            <p className="text-[11px] text-indigo-800 leading-relaxed">
-                              Finance has verified this request. You hold sole executive authorization to approve store funds.
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={handleApprove}
-                              className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm transition-colors"
-                            >
-                              <Check className="w-4 h-4" />
-                              <span>Approve & Send to Finance for Payment ({formatBirr(req.amount)})</span>
+                              <span>Disburse {formatBirr(req.amount)} Payment</span>
                             </button>
                             <button
                               onClick={() => setIsRejecting(true)}
@@ -513,30 +546,31 @@ export const RequisitionDetailModal: React.FC = () => {
                         </div>
                       )}
 
-                      {req.status === 'approved' && (
-                        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs space-y-1">
-                          <div className="font-bold flex items-center gap-1.5 text-emerald-900">
-                            <CheckCircle className="w-4 h-4 text-emerald-700" />
-                            <span>Approved by General Manager:</span>
+                      {currentUser.role === 'general_manager' && (
+                        /* General Manager info view */
+                        <div className="p-3.5 rounded-xl bg-emerald-50/80 border border-emerald-200 text-emerald-900 text-xs space-y-1">
+                          <div className="font-bold flex items-center gap-1.5 text-emerald-950">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+                            <span>Approved & Sent to Finance:</span>
                           </div>
                           <p className="text-[11px] text-emerald-800 leading-relaxed">
-                            This voucher has been officially approved and returned to Finance for payment disbursement.
+                            You approved this requisition. It has been sent back to the Finance team for cash/digital payment disbursement.
                           </p>
                         </div>
                       )}
-                    </div>
-                  )}
 
-                  {/* 3. STAFF / REQUESTER VIEW */}
-                  {currentUser.role === 'staff' && (
-                    <div className="p-3 rounded-xl bg-sky-50 border border-sky-200 text-sky-900 text-xs space-y-1">
-                      <div className="font-bold flex items-center gap-1.5">
-                        <Clock className="w-4 h-4 text-[#00AEEF]" />
-                        <span>Requisition in Progress:</span>
-                      </div>
-                      <p className="text-[11px] text-sky-800 leading-relaxed">
-                        Your requisition is being processed through the standard 4-step control workflow (Staff Request ➔ Finance Check ➔ GM Approval ➔ Finance Payment).
-                      </p>
+                      {currentUser.role === 'staff' && (
+                        /* Requester status view */
+                        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs space-y-1">
+                          <div className="font-bold flex items-center gap-1.5">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            <span>Status: Approved — Ready for Payment</span>
+                          </div>
+                          <p className="text-[11px] text-emerald-800 leading-relaxed">
+                            Approved by the General Manager! The Finance team is currently processing your payment disbursement.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

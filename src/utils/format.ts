@@ -58,30 +58,29 @@ export const getRoleDisplay = (
     case 'staff':
     case 'requester':
       return {
-        title: 'Store Staff / Requester',
-        color: 'text-stone-700',
-        bg: 'bg-stone-100',
-        border: 'border-stone-200',
+        title: 'Store Requester',
+        color: 'text-sky-800',
+        bg: 'bg-sky-50',
+        border: 'border-sky-200',
       };
     case 'finance':
-    case 'finance_officer':
+    case 'finance_manager':
       return {
-        title: 'Finance Custodian',
-        color: 'text-emerald-900',
+        title: 'Finance Team',
+        color: 'text-emerald-800',
         bg: 'bg-emerald-50',
         border: 'border-emerald-300',
       };
     case 'general_manager':
-    case 'store_manager':
       return {
-        title: 'General Manager (Sole Approval Authority)',
-        color: 'text-indigo-900',
+        title: 'General Manager',
+        color: 'text-indigo-800',
         bg: 'bg-indigo-50',
         border: 'border-indigo-300',
       };
     default:
       return {
-        title: 'Store Staff / Requester',
+        title: 'Store Requester',
         color: 'text-stone-700',
         bg: 'bg-stone-100',
         border: 'border-stone-200',
@@ -101,28 +100,28 @@ export const getStatusDisplay = (
     case 'pending_finance':
     case 'pending_manager':
       return {
-        label: 'Awaiting Finance Check',
+        label: 'Pending Finance Check',
         color: 'text-amber-800',
         bg: 'bg-amber-50 border-amber-300',
         dotColor: 'bg-amber-500',
       };
     case 'pending_gm':
       return {
-        label: 'Verified by Finance (Awaiting GM Approval)',
+        label: 'Pending GM Approval',
         color: 'text-indigo-800',
         bg: 'bg-indigo-50 border-indigo-300',
         dotColor: 'bg-indigo-500',
       };
     case 'approved':
       return {
-        label: 'GM Approved (Returned to Finance for Payment)',
+        label: 'Approved (Pending Payment)',
         color: 'text-emerald-800',
         bg: 'bg-emerald-50 border-emerald-300',
         dotColor: 'bg-emerald-500',
       };
     case 'disbursed':
       return {
-        label: 'Disbursed & Paid by Finance',
+        label: 'Paid & Disbursed',
         color: 'text-[#0284C7]',
         bg: 'bg-sky-50 border-sky-300',
         dotColor: 'bg-[#00AEEF]',

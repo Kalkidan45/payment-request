@@ -152,7 +152,7 @@ export const PrintVoucherModal: React.FC = () => {
                   2. Finance Check
                 </span>
                 <div className="text-[11px] font-bold text-stone-900 truncate">
-                  Bethelhem Haile
+                  Bethelhem Desta
                 </div>
                 <div className="border-t border-dashed border-stone-400 pt-1 text-[9px] text-stone-400">
                   Signature
@@ -178,7 +178,7 @@ export const PrintVoucherModal: React.FC = () => {
                   4. Finance Payout
                 </span>
                 <div className="text-[11px] font-bold text-stone-900 truncate">
-                  Bethelhem Haile
+                  Bethelhem Desta
                 </div>
                 <div className="border-t border-dashed border-stone-400 pt-1 text-[9px] text-stone-400">
                   Payment Paid

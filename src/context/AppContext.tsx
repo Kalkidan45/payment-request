@@ -80,6 +80,21 @@ interface AppContextType {
     branch: BranchLocation;
     phone: string;
   }) => Promise<User>;
+  updateStaffByManager: (
+    userId: string,
+    userData: {
+      username: string;
+      password?: string;
+      name: string;
+      email: string;
+      role: Role;
+      roleTitle: string;
+      department: string;
+      branch: BranchLocation;
+      phone: string;
+    }
+  ) => Promise<User>;
+  deleteStaffByManager: (userId: string) => Promise<void>;
   createRequisition: (reqData: {
     title: string;
     amount: number;
@@ -101,35 +116,40 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const sanitizeRole = (roleStr?: string): Role => {
-  if (roleStr === 'finance' || roleStr === 'finance_officer') return 'finance';
-  if (roleStr === 'general_manager' || roleStr === 'store_manager') return 'general_manager';
+  if (roleStr === 'general_manager') {
+    return 'general_manager';
+  }
+  if (roleStr === 'finance' || roleStr === 'finance_manager') {
+    return 'finance';
+  }
   return 'staff';
 };
 
 const sanitizeUser = (u: any): User => {
-  if (!u || u.id === 'usr-2' || u.username === 'dawit') return INITIAL_USERS[0];
-  const role = sanitizeRole(u.role);
+  if (!u) return INITIAL_USERS[0];
+  const matched = INITIAL_USERS.find((init) => init.id === u.id || init.username === u.username);
   return {
     id: u.id || `usr-${Date.now()}`,
-    username: u.username || 'staff',
-    password: u.password || 'password123',
-    name: u.name || 'Store Staff',
-    email: u.email || 'staff@kurttakids.com',
-    role,
+    username: u.username || 'user',
+    name: u.name || 'User',
+    email: u.email || 'user@kurttakids.com',
+    role: sanitizeRole(u.role),
     roleTitle:
       u.roleTitle ||
-      (role === 'general_manager'
-        ? 'General Manager (Sole Approval)'
-        : role === 'finance'
-        ? 'Finance Custodian & Officer'
-        : 'Store Staff'),
+      (sanitizeRole(u.role) === 'general_manager'
+        ? 'General Manager'
+        : sanitizeRole(u.role) === 'finance'
+        ? 'Finance Team Officer'
+        : 'Store Requester'),
     department: u.department || 'Retail Operations',
     branch: u.branch || 'Bole Medhanialem Flagship',
-    phone: u.phone || '+251 91 123 4567',
+    phone: u.phone || '+251 91 000 0000',
     avatarUrl:
       u.avatarUrl ||
-      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+      matched?.avatarUrl ||
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     createdAt: u.createdAt || new Date().toISOString(),
+    password: u.password || 'password123',
   };
 };
 
@@ -235,30 +255,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const setupFirestore = async () => {
       try {
-        // 1. Users Collection
+        // 1. Users Collection - maintain staff, finance, and GM accounts
         const usersCol = collection(db, 'users');
-        try {
-          deleteDoc(doc(db, 'users', 'usr-2')).catch(() => {});
-        } catch {
-          // ignore
-        }
-
         unsubscribeUsers = onSnapshot(usersCol, async (snapshot) => {
           if (!snapshot.empty) {
-            const firestoreUsers = snapshot.docs
-              .map((docSnap) => sanitizeUser(docSnap.data()))
-              .filter(
-                (u) =>
-                  u.id !== 'usr-2' &&
-                  u.username !== 'dawit' &&
-                  !u.name.toLowerCase().includes('dawit')
-              );
-            setUsers(firestoreUsers.length > 0 ? firestoreUsers : INITIAL_USERS);
+            const firestoreUsers = snapshot.docs.map((docSnap) => sanitizeUser(docSnap.data()));
+            const merged = [...firestoreUsers];
+            for (const init of INITIAL_USERS) {
+              if (!merged.some((u) => u.username === init.username || u.id === init.id)) {
+                merged.push(init);
+                try {
+                  await setDoc(doc(db, 'users', init.id), init);
+                } catch {
+                  // ignore
+                }
+              }
+            }
+            setUsers(merged);
           } else {
-            // Seed initial users into Firestore
             for (const u of INITIAL_USERS) {
               await setDoc(doc(db, 'users', u.id), u);
             }
+            setUsers(INITIAL_USERS);
           }
         });
 
@@ -384,7 +402,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const switchRole = (targetRole: Role) => {
-    const targetUser = users.find((u) => u.role === targetRole) || users[0];
+    const targetUser =
+      users.find((u) => u.role === targetRole) ||
+      INITIAL_USERS.find((u) => u.role === targetRole) ||
+      users[0];
     if (targetUser) {
       setCurrentUser(targetUser);
     }
@@ -439,6 +460,108 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setUsers((prev) => [newUser, ...prev]);
     return newUser;
+  };
+
+  // GENERAL MANAGER CAN EDIT USER DETAILS, LOGIN CREDENTIALS, AND ROLES
+  const updateStaffByManager = async (
+    userId: string,
+    userData: {
+      username: string;
+      password?: string;
+      name: string;
+      email: string;
+      role: Role;
+      roleTitle: string;
+      department: string;
+      branch: BranchLocation;
+      phone: string;
+    }
+  ): Promise<User> => {
+    if (!isGeneralManager) {
+      throw new Error('Unauthorized: Only the General Manager has access to edit users.');
+    }
+
+    const existingUser = users.find((u) => u.id === userId);
+    if (!existingUser) {
+      throw new Error('User not found.');
+    }
+
+    const trimmedUsername = userData.username.trim().toLowerCase();
+    const duplicate = users.find(
+      (u) => u.id !== userId && u.username.toLowerCase() === trimmedUsername
+    );
+    if (duplicate) {
+      throw new Error(`Username @${trimmedUsername} is already registered to ${duplicate.name}.`);
+    }
+
+    // If changing role to general_manager, ensure only one GM exists in system
+    if (userData.role === 'general_manager' && existingUser.role !== 'general_manager') {
+      const existingGM = users.find((u) => u.role === 'general_manager' && u.id !== userId);
+      if (existingGM) {
+        throw new Error(
+          `System Rule: Only one General Manager is allowed (${existingGM.name}). Change their role first before promoting another account.`
+        );
+      }
+    }
+
+    const updatedUser: User = {
+      ...existingUser,
+      username: trimmedUsername,
+      password:
+        userData.password && userData.password.trim().length > 0
+          ? userData.password.trim()
+          : existingUser.password || 'password123',
+      name: userData.name.trim(),
+      email: userData.email.trim(),
+      role: userData.role,
+      roleTitle: userData.roleTitle.trim(),
+      department: userData.department.trim(),
+      branch: userData.branch,
+      phone: userData.phone.trim(),
+    };
+
+    // Save to Firestore with merge
+    try {
+      await setDoc(doc(db, 'users', userId), updatedUser, { merge: true });
+    } catch (e) {
+      console.warn('Firestore user update fallback:', e);
+    }
+
+    setUsers((prev) => prev.map((u) => (u.id === userId ? updatedUser : u)));
+
+    // If current logged-in user is updated, update currentUser state in real time
+    if (currentUser?.id === userId) {
+      setCurrentUser(updatedUser);
+    }
+
+    return updatedUser;
+  };
+
+  const deleteStaffByManager = async (userId: string): Promise<void> => {
+    if (!isGeneralManager) {
+      throw new Error('Unauthorized: Only the General Manager can delete staff accounts.');
+    }
+
+    const targetUser = users.find((u) => u.id === userId);
+    if (!targetUser) {
+      throw new Error('User not found.');
+    }
+
+    if (targetUser.role === 'general_manager') {
+      throw new Error('System Rule: The General Manager account cannot be deleted.');
+    }
+
+    if (currentUser?.id === userId) {
+      throw new Error('You cannot delete your own account while logged in.');
+    }
+
+    try {
+      await deleteDoc(doc(db, 'users', userId));
+    } catch (e) {
+      console.warn('Firestore user delete fallback:', e);
+    }
+
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
   };
 
   // STAGE 1: Staff submits cash requisition -> goes to Finance team for check & verification
@@ -601,15 +724,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const target = requisitions.find((r) => r.id === reqId);
     if (!target) return;
 
-    // RULE: Finance CANNOT disburse without prior General Manager approval!
-    if (target.status !== 'approved') {
-      alert('Finance cannot disburse payment until the General Manager has approved the requisition.');
+    const isGM = currentUser.role === 'general_manager';
+    if (target.status !== 'approved' && !isGM) {
+      alert('Finance cannot disburse payment until approved.');
       return;
     }
 
     const updatedReq: Requisition = {
       ...target,
-      status: 'disbursed', // Stage 4: Paid & Disbursed
+      status: 'disbursed', // Paid & Disbursed
       paymentMethod,
       paymentReference: reference || `REF-${Math.floor(100000 + Math.random() * 900000)}`,
       updatedAt: now,
@@ -623,7 +746,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           action: 'disbursed',
           comment:
             comment ||
-            `Disbursed via ${paymentMethod} by Finance team following General Manager's approval.`,
+            `Disbursed via ${paymentMethod} by ${currentUser.name} (${currentUser.roleTitle}).`,
           timestamp: now,
         },
       ],
@@ -731,6 +854,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         logout,
         switchRole,
         createStaffByManager,
+        updateStaffByManager,
+        deleteStaffByManager,
         createRequisition,
         verifyRequisition,
         approveRequisition,

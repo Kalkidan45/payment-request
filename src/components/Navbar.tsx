@@ -6,21 +6,16 @@ import {
   Plus,
   Users,
   LogOut,
-  ChevronDown,
   Layers,
   FileText,
   LayoutDashboard,
   ShieldCheck,
-  Coins,
   Send,
-  Database,
 } from 'lucide-react';
-import { Role } from '../types';
 
 export const Navbar: React.FC = () => {
   const {
     currentUser,
-    switchRole,
     logout,
     activeTab,
     setActiveTab,
@@ -32,18 +27,11 @@ export const Navbar: React.FC = () => {
     isManager,
   } = useApp();
 
-  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   if (!currentUser) return null;
 
   const currentRoleInfo = getRoleDisplay(currentUser.role);
-
-  const availableRoles: { role: Role; label: string; desc: string }[] = [
-    { role: 'staff', label: 'Almaz (Staff / Requester)', desc: 'Stage 1: Creates vouchers (Request page only)' },
-    { role: 'finance', label: 'Bethelhem (Finance Team)', desc: 'Stage 2 & 4: Checks requests & disburses payments' },
-    { role: 'general_manager', label: 'Solomon (General Manager)', desc: 'Stage 3: Executive approval authority' },
-  ];
 
   return (
     <header className="sticky top-0 z-30 bg-stone-900 text-stone-100 border-b border-stone-800 shadow-md">
@@ -106,7 +94,7 @@ export const Navbar: React.FC = () => {
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors font-medium text-stone-300 hover:text-white hover:bg-stone-800 cursor-pointer"
                 >
                   <Users className="w-4 h-4" />
-                  {isManager ? 'Manage Staff' : 'Staff Directory'}
+                  {isManager ? 'Manage & Edit Users' : 'Staff Directory'}
                 </button>
               </nav>
             ) : (
@@ -156,75 +144,12 @@ export const Navbar: React.FC = () => {
               <span>Request Cash</span>
             </button>
 
-            {/* Role Switcher Pill for Evaluation */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setIsRoleDropdownOpen(!isRoleDropdownOpen);
-                  setIsProfileDropdownOpen(false);
-                }}
-                className="flex items-center gap-1.5 bg-stone-800 hover:bg-stone-750 border border-stone-700 text-stone-200 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-medium cursor-pointer transition-colors"
-                title="Switch active role to test access boundaries"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-[#00AEEF] shrink-0" />
-                <span className="max-w-[80px] sm:max-w-[130px] truncate hidden xs:inline">
-                  {currentRoleInfo.title.split(' ')[0]}
-                </span>
-                <ChevronDown className="w-3 h-3 text-stone-400" />
-              </button>
-
-              {isRoleDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-76 bg-white text-stone-900 rounded-xl shadow-2xl border border-stone-200 py-2 z-50">
-                  <div className="px-3.5 py-2 border-b border-stone-100">
-                    <p className="text-xs font-bold uppercase tracking-wider text-stone-700 flex items-center justify-between">
-                      <span>Test Role Access</span>
-                      <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
-                        <Database className="w-3 h-3" /> Firebase Live
-                      </span>
-                    </p>
-                    <p className="text-[11px] text-stone-500 mt-0.5">
-                      Verify that Staff only has request page, while Manager & Finance have dashboard & transactions:
-                    </p>
-                  </div>
-
-                  <div className="py-1">
-                    {availableRoles.map((r) => {
-                      const isCurrent = currentUser.role === r.role;
-                      return (
-                        <button
-                          key={r.role}
-                          onClick={() => {
-                            switchRole(r.role);
-                            setIsRoleDropdownOpen(false);
-                          }}
-                          className={`w-full text-left px-3.5 py-2 hover:bg-stone-50 transition-colors flex items-start gap-2.5 ${
-                            isCurrent ? 'bg-sky-50/70' : ''
-                          }`}
-                        >
-                          <div
-                            className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
-                              isCurrent ? 'bg-[#00AEEF]' : 'bg-stone-300'
-                            }`}
-                          />
-                          <div>
-                            <div className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
-                              {r.label}
-                              {isCurrent && (
-                                <span className="text-[9px] bg-sky-100 text-[#0284C7] px-1.5 py-0.2 rounded font-bold">
-                                  Active
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[10px] text-stone-500 leading-tight mt-0.5">
-                              {r.desc}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+            {/* Current Active Role Indicator */}
+            <div className="flex items-center gap-1.5 bg-stone-800 border border-stone-700 text-stone-200 px-2.5 py-1.5 rounded-xl text-xs font-medium">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#00AEEF] shrink-0" />
+              <span className="hidden xs:inline font-semibold text-stone-200">
+                {currentRoleInfo.title}
+              </span>
             </div>
 
             {/* Profile Dropdown */}
@@ -232,7 +157,6 @@ export const Navbar: React.FC = () => {
               <button
                 onClick={() => {
                   setIsProfileDropdownOpen(!isProfileDropdownOpen);
-                  setIsRoleDropdownOpen(false);
                 }}
                 className="flex items-center gap-2 p-1 rounded-xl hover:bg-stone-800 transition-colors cursor-pointer"
               >

@@ -279,7 +279,7 @@ export const RequisitionList: React.FC = () => {
 
                     {/* Quick Action buttons based on Role */}
                     <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                      {/* 1. FINANCE TEAM ACTIONS */}
+                      {/* FINANCE ACTIONS */}
                       {currentUser?.role === 'finance' && (
                         <>
                           {req.status === 'pending_finance' && (
@@ -287,25 +287,15 @@ export const RequisitionList: React.FC = () => {
                               onClick={() =>
                                 verifyRequisition(
                                   req.id,
-                                  'Verified by Finance. Forwarded to GM for approval.'
+                                  'Checked by Finance. Forwarded to GM for approval.'
                                 )
                               }
                               className="bg-[#00AEEF] hover:bg-[#0284C7] text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
-                              title="Verify & send to General Manager"
+                              title="Check request and send to GM"
                             >
-                              <Send className="w-3.5 h-3.5" />
-                              <span>Verify & Send to GM</span>
+                              <Send className="w-3 h-3" />
+                              <span>Check & Send</span>
                             </button>
-                          )}
-
-                          {req.status === 'pending_gm' && (
-                            <span
-                              className="text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded-lg flex items-center gap-1 cursor-default"
-                              title="Verified by Finance. Waiting for General Manager to approve."
-                            >
-                              <Clock className="w-3 h-3 text-indigo-500" />
-                              <span>Sent to GM</span>
-                            </span>
                           )}
 
                           {req.status === 'approved' && (
@@ -315,55 +305,53 @@ export const RequisitionList: React.FC = () => {
                                   req.id,
                                   req.paymentMethod,
                                   `REF-${Math.floor(100000 + Math.random() * 900000)}`,
-                                  'Authorized and disbursed by Finance Custodian following GM approval'
+                                  'Disbursed by Finance'
                                 )
                               }
-                              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
-                              title="Disburse cash or electronic transfer"
+                              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                              title="Disburse payment to staff"
                             >
                               <Coins className="w-3.5 h-3.5" />
                               <span>Disburse</span>
                             </button>
                           )}
+
+                          {req.status === 'pending_gm' && (
+                            <span className="text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded-md font-medium">
+                              With GM
+                            </span>
+                          )}
                         </>
                       )}
 
-                      {/* 2. GENERAL MANAGER ACTIONS */}
+                      {/* GENERAL MANAGER ACTIONS */}
                       {currentUser?.role === 'general_manager' && (
                         <>
-                          {req.status === 'pending_finance' && (
-                            <span
-                              className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg flex items-center gap-1 cursor-default"
-                              title="Finance team is checking and verifying request."
-                            >
-                              <Clock className="w-3 h-3 text-amber-500" />
-                              <span>Pending Finance</span>
-                            </span>
-                          )}
-
                           {req.status === 'pending_gm' && (
                             <button
                               onClick={() =>
                                 approveRequisition(
                                   req.id,
-                                  'Officially approved by General Manager. Returned to Finance for payout.'
+                                  'Approved by General Manager. Sent back to Finance for payout.'
                                 )
                               }
                               className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
-                              title="Approve Requisition for Finance Payout"
+                              title="Approve and send back to Finance"
                             >
                               <Check className="w-3.5 h-3.5" />
                               <span>Approve</span>
                             </button>
                           )}
 
+                          {req.status === 'pending_finance' && (
+                            <span className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-md font-medium">
+                              Awaiting Finance
+                            </span>
+                          )}
+
                           {req.status === 'approved' && (
-                            <span
-                              className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg flex items-center gap-1 cursor-default"
-                              title="Approved by GM. Sent to Finance for payment."
-                            >
-                              <CheckCircle className="w-3 h-3 text-emerald-500" />
-                              <span>Sent to Finance</span>
+                            <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-md font-medium">
+                              With Finance
                             </span>
                           )}
                         </>

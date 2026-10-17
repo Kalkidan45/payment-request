@@ -16,6 +16,7 @@ import {
   Send,
   FileCheck,
   CheckCircle,
+  Users,
 } from 'lucide-react';
 import { Requisition, BranchLocation } from '../types';
 
@@ -31,6 +32,7 @@ export const Dashboard: React.FC = () => {
     readyForPaymentCount,
     setActiveTab,
     setIsNewReqModalOpen,
+    setIsStaffDirectoryOpen,
     setSelectedRequisition,
     verifyRequisition,
     approveRequisition,
@@ -43,11 +45,11 @@ export const Dashboard: React.FC = () => {
 
   // Filter items needing current user's direct attention
   const actionRequiredList = requisitions.filter((r) => {
-    if (currentUser.role === 'finance') {
-      return r.status === 'pending_finance' || r.status === 'approved';
-    }
     if (currentUser.role === 'general_manager') {
       return r.status === 'pending_gm';
+    }
+    if (currentUser.role === 'finance') {
+      return r.status === 'pending_finance' || r.status === 'approved';
     }
     return false;
   });
@@ -102,8 +104,17 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick CTA Button */}
-        <div className="flex items-center gap-2 pt-1 sm:pt-0 border-t sm:border-t-0 border-stone-100">
+        {/* Quick CTA Buttons */}
+        <div className="flex items-center gap-2 pt-1 sm:pt-0 border-t sm:border-t-0 border-stone-100 flex-wrap">
+          {currentUser.role === 'general_manager' && (
+            <button
+              onClick={() => setIsStaffDirectoryOpen(true)}
+              className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all border border-stone-300 shadow-2xs cursor-pointer min-h-[44px]"
+            >
+              <Users className="w-4 h-4 text-[#00AEEF]" />
+              <span>Manage & Edit Users</span>
+            </button>
+          )}
           <button
             onClick={() => setIsNewReqModalOpen(true)}
             className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-[#00AEEF] hover:bg-[#0284C7] active:scale-95 text-white px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs shadow-sky-900/20 cursor-pointer min-h-[44px]"
@@ -279,34 +290,20 @@ export const Dashboard: React.FC = () => {
                     Review Details
                   </button>
 
-                  {/* Fast Action Buttons by Role & State */}
+                  {/* Action Buttons for Finance */}
                   {currentUser.role === 'finance' && req.status === 'pending_finance' && (
                     <button
                       onClick={() =>
                         verifyRequisition(
                           req.id,
-                          'Verified by Finance. Forwarded to GM for approval.'
+                          'Checked by Finance. Forwarded to General Manager for executive approval.'
                         )
                       }
-                      className="bg-[#00AEEF] hover:bg-[#0284C7] text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                      className="bg-[#00AEEF] hover:bg-[#0284C7] text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                      title="Check expense and send to GM for approval"
                     >
                       <Send className="w-3.5 h-3.5" />
-                      Verify & Send to GM
-                    </button>
-                  )}
-
-                  {currentUser.role === 'general_manager' && req.status === 'pending_gm' && (
-                    <button
-                      onClick={() =>
-                        approveRequisition(
-                          req.id,
-                          'Officially approved by General Manager. Returned to Finance for payment.'
-                        )
-                      }
-                      className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      Approve Payment
+                      Check & Send to GM
                     </button>
                   )}
 
@@ -316,14 +313,32 @@ export const Dashboard: React.FC = () => {
                         disburseRequisition(
                           req.id,
                           req.paymentMethod,
-                          `AUTO-REF-${Math.floor(100000 + Math.random() * 900000)}`,
-                          'Disbursed by Finance after General Manager approval'
+                          `REF-${Math.floor(100000 + Math.random() * 900000)}`,
+                          'Disbursed by Finance'
                         )
                       }
                       className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                      title="Disburse payment to staff"
                     >
                       <Coins className="w-3.5 h-3.5" />
                       Disburse {formatBirr(req.amount)}
+                    </button>
+                  )}
+
+                  {/* Action Buttons for General Manager */}
+                  {currentUser.role === 'general_manager' && req.status === 'pending_gm' && (
+                    <button
+                      onClick={() =>
+                        approveRequisition(
+                          req.id,
+                          'Approved by General Manager. Sent back to Finance for payment.'
+                        )
+                      }
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                      title="Approve and send back to Finance for payout"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      Approve & Send to Finance
                     </button>
                   )}
                 </div>
