@@ -67,3 +67,20 @@ export interface PettyCashFund {
   currentBalance: number;
   monthAllocated: number;
 }
+
+export interface DepositRequest {
+  id: string;
+  referenceNumber: string; // e.g. DEP-2026-001
+  amount: number; // in Birr (ETB)
+  title: string;
+  description: string;
+  paymentMethod: PaymentMethod;
+  status: 'pending_gm_deposit' | 'approved_deposit' | 'rejected_deposit';
+  requesterId: string;
+  requesterName: string;
+  createdAt: string;
+  updatedAt: string;
+  approvedBy?: string;
+  rejectionReason?: string;
+}
+

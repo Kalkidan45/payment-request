@@ -14,12 +14,25 @@ import {
 import { BranchLocation } from '../types';
 
 export const MonthlyReport: React.FC = () => {
-  const { requisitions, setSelectedRequisition } = useApp();
+  const { requisitions, depositRequests, setSelectedRequisition } = useApp();
 
   const [selectedMonth, setSelectedMonth] = useState<'2026-10' | '2026-09' | 'all'>('2026-10');
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
 
-  // Filter disbursed requisitions by selected month and branch
+  // Filter approved deposit requests (Money In requested by Finance to GM)
+  const filteredDeposits = useMemo(() => {
+    return depositRequests.filter((d) => {
+      if (d.status !== 'approved_deposit') return false;
+      if (selectedMonth !== 'all' && !d.updatedAt.startsWith(selectedMonth)) return false;
+      return true;
+    });
+  }, [depositRequests, selectedMonth]);
+
+  const totalBirrDeposited = useMemo(() => {
+    return filteredDeposits.reduce((acc, curr) => acc + curr.amount, 0);
+  }, [filteredDeposits]);
+
+  // Filter disbursed requisitions by selected month and branch (Money Out)
   const filteredDisbursed = useMemo(() => {
     return requisitions.filter((r) => {
       if (r.status !== 'disbursed') return false;
@@ -180,18 +193,44 @@ export const MonthlyReport: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Birr Spend Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Total Birr Spent */}
+      {/* Main Birr Cash Flow & Spend Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Funds Deposited (Money In) */}
+        <div className="bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500 text-white rounded-2xl p-5 shadow-sm">
+          <div className="text-xs uppercase tracking-wider text-emerald-100 font-bold">
+            Fund Deposits In (Money In)
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono mt-2">
+            {formatBirr(totalBirrDeposited)}
+          </div>
+          <div className="text-xs text-emerald-100/90 mt-2">
+            Requested by Finance & approved by GM
+          </div>
+        </div>
+
+        {/* Total Birr Spent (Money Out) */}
         <div className="bg-gradient-to-br from-[#0284C7] via-[#00AEEF] to-[#38BDF8] text-white rounded-2xl p-5 shadow-sm">
           <div className="text-xs uppercase tracking-wider text-sky-100 font-bold">
-            Total Petty Cash Spent ({getMonthLabel(selectedMonth).split(' ')[0]})
+            Petty Cash Spent (Money Out)
           </div>
-          <div className="text-3xl font-black font-mono mt-2">
+          <div className="text-2xl sm:text-3xl font-black font-mono mt-2">
             {formatBirr(totalBirrSpent)}
           </div>
-          <div className="text-xs text-sky-100/90 mt-2 flex items-center gap-1">
-            <span>Across {filteredDisbursed.length} disbursed cash vouchers</span>
+          <div className="text-xs text-sky-100/90 mt-2">
+            Across {filteredDisbursed.length} disbursed vouchers
+          </div>
+        </div>
+
+        {/* Net Balance Movement */}
+        <div className="bg-white rounded-2xl p-5 border border-stone-200 shadow-xs">
+          <div className="text-xs uppercase tracking-wider text-stone-500 font-bold">
+            Net Cash Flow Movement
+          </div>
+          <div className={`text-2xl font-black font-mono mt-2 ${totalBirrDeposited - totalBirrSpent >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+            {formatBirr(totalBirrDeposited - totalBirrSpent)}
+          </div>
+          <div className="text-xs text-stone-500 mt-2">
+            Deposits minus disbursements
           </div>
         </div>
 
@@ -207,19 +246,49 @@ export const MonthlyReport: React.FC = () => {
             Per approved petty cash payout
           </div>
         </div>
+      </div>
 
-        {/* Top Spending Branch */}
-        <div className="bg-white rounded-2xl p-5 border border-stone-200 shadow-xs">
-          <div className="text-xs uppercase tracking-wider text-stone-500 font-bold">
-            Top Spending Branch
-          </div>
-          <div className="text-lg font-bold text-stone-900 mt-2 truncate">
-            {branchStats[0] ? branchStats[0].branch : 'None'}
-          </div>
-          <div className="text-xs text-[#0284C7] font-semibold font-mono mt-1">
-            {branchStats[0] ? formatBirr(branchStats[0].total) : 'Br 0.00'} (
-            {branchStats[0]?.percent.toFixed(1)}% of total)
-          </div>
+      {/* Fund Deposits (Money In) Details Section */}
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-xs p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-bold text-stone-900 flex items-center gap-2">
+            <Coins className="w-4 h-4 text-emerald-600" />
+            Fund Deposit Requests (Finance to GM - Money In)
+          </h2>
+          <span className="text-xs text-stone-400 font-mono">Replenishment Ledger</span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-stone-100 text-[11px] font-bold text-stone-500 uppercase tracking-wider">
+                <th className="pb-3 px-3">Ref #</th>
+                <th className="pb-3 px-3">Deposit Title</th>
+                <th className="pb-3 px-3">Requester (Finance)</th>
+                <th className="pb-3 px-3">Channel</th>
+                <th className="pb-3 px-3 text-right">Amount (Birr)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-100 text-xs text-stone-800">
+              {filteredDeposits.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-6 text-center text-stone-400 font-medium">
+                    No approved fund deposits recorded for this period.
+                  </td>
+                </tr>
+              ) : (
+                filteredDeposits.map((dep) => (
+                  <tr key={dep.id} className="hover:bg-stone-50/80">
+                    <td className="py-3 px-3 font-mono font-bold text-stone-900">{dep.referenceNumber}</td>
+                    <td className="py-3 px-3 font-semibold">{dep.title}</td>
+                    <td className="py-3 px-3 text-stone-600">{dep.requesterName}</td>
+                    <td className="py-3 px-3 font-medium text-stone-700">{dep.paymentMethod}</td>
+                    <td className="py-3 px-3 text-right font-mono font-bold text-emerald-700">+{formatBirr(dep.amount)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 

@@ -37,6 +37,10 @@ export const Dashboard: React.FC = () => {
     verifyRequisition,
     approveRequisition,
     disburseRequisition,
+    depositRequests,
+    setIsDepositModalOpen,
+    approveDepositRequest,
+    rejectDepositRequest,
   } = useApp();
 
   if (!currentUser) return null;
@@ -115,13 +119,24 @@ export const Dashboard: React.FC = () => {
               <span>Manage & Edit Users</span>
             </button>
           )}
-          <button
-            onClick={() => setIsNewReqModalOpen(true)}
-            className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-[#00AEEF] hover:bg-[#0284C7] active:scale-95 text-white px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs shadow-sky-900/20 cursor-pointer min-h-[44px]"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>New Cash Requisition</span>
-          </button>
+          {currentUser.role === 'finance' && (
+            <button
+              onClick={() => setIsDepositModalOpen(true)}
+              className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer min-h-[44px]"
+            >
+              <Coins className="w-4 h-4" />
+              <span>Request Deposit from GM</span>
+            </button>
+          )}
+          {currentUser.role !== 'finance' && (
+            <button
+              onClick={() => setIsNewReqModalOpen(true)}
+              className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-[#00AEEF] hover:bg-[#0284C7] active:scale-95 text-white px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs shadow-sky-900/20 cursor-pointer min-h-[44px]"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>New Cash Requisition</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -234,6 +249,59 @@ export const Dashboard: React.FC = () => {
       {/* ============================================================== */}
       {/* ACTION REQUIRED BANNER (If current role has pending tasks)     */}
       {/* ============================================================== */}
+      {/* Pending Deposit Requests (GM View) */}
+      {currentUser.role === 'general_manager' && depositRequests.filter(d => d.status === 'pending_gm_deposit').length > 0 && (
+        <div className="bg-emerald-50/90 border border-emerald-300 rounded-2xl p-4 sm:p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Coins className="w-5 h-5 text-emerald-700" />
+              <h2 className="text-sm font-bold text-emerald-900">
+                Pending Fund Deposit Requests from Finance ({depositRequests.filter(d => d.status === 'pending_gm_deposit').length})
+              </h2>
+            </div>
+            <span className="text-xs text-emerald-800 font-semibold">
+              Executive Approval Required
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {depositRequests.filter(d => d.status === 'pending_gm_deposit').map((dep) => (
+              <div key={dep.id} className="bg-white p-4 rounded-xl border border-emerald-200 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono font-bold text-emerald-800">{dep.referenceNumber}</span>
+                    <span className="text-sm font-black font-mono text-stone-900">{formatBirr(dep.amount)}</span>
+                  </div>
+                  <h3 className="text-xs font-semibold text-stone-900 mt-1">{dep.title}</h3>
+                  <p className="text-[11px] text-stone-500 mt-0.5 line-clamp-2">{dep.description}</p>
+                  <div className="text-[10px] text-stone-400 mt-2 font-mono">
+                    Requested by {dep.requesterName} via {dep.paymentMethod}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-stone-100">
+                  <button
+                    onClick={() => approveDepositRequest(dep.id)}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Approve & Deposit Funds</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const reason = prompt('Reason for declining deposit request:');
+                      if (reason) rejectDepositRequest(dep.id, reason);
+                    }}
+                    className="px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {actionRequiredList.length > 0 && (
         <div className="bg-amber-50/90 border border-amber-300 rounded-2xl p-4 sm:p-5">
           <div className="flex items-center justify-between mb-3">

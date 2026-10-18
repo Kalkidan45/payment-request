@@ -12,6 +12,7 @@ import {
   LogOut,
   X,
   ChevronUp,
+  Coins,
 } from 'lucide-react';
 import { Role } from '../types';
 import { getRoleDisplay } from '../utils/format';
@@ -21,6 +22,7 @@ export const MobileNav: React.FC = () => {
     activeTab,
     setActiveTab,
     setIsNewReqModalOpen,
+    setIsDepositModalOpen,
     setIsStaffDirectoryOpen,
     requisitions,
     currentUser,
@@ -218,8 +220,8 @@ export const MobileNav: React.FC = () => {
               </span>
             </button>
           </div>
-        ) : (
-          /* Manager & Finance Mobile Layout: 5 items */
+        ) : isGeneralManager ? (
+          /* General Manager Mobile Layout: 5 items */
           <div className="grid grid-cols-5 items-center h-14 max-w-md mx-auto px-2">
             {/* Dashboard */}
             <button
@@ -259,6 +261,58 @@ export const MobileNav: React.FC = () => {
                 aria-label="New Cash Requisition"
               >
                 <Plus className="w-7 h-7 stroke-[3]" />
+              </button>
+            </div>
+
+            {/* Monthly Reports */}
+            <button
+              onClick={() => setActiveTab('reports')}
+              className={`flex flex-col items-center justify-center py-1 transition-all active:scale-95 ${
+                activeTab === 'reports' ? 'text-[#00AEEF] font-bold' : 'text-stone-400'
+              }`}
+            >
+              <FileText className="w-5 h-5" />
+              <span className="text-[10px] mt-1 font-medium">Reports</span>
+            </button>
+
+            {/* Profile / Roles Drawer */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="flex flex-col items-center justify-center py-1 text-stone-400 active:scale-95 transition-all"
+            >
+              <img
+                src={currentUser.avatarUrl}
+                alt={currentUser.name}
+                className="w-5 h-5 rounded-full object-cover border border-[#00AEEF]"
+              />
+              <span className="text-[10px] mt-1 font-medium flex items-center gap-0.5">
+                Role <ChevronUp className="w-2.5 h-2.5" />
+              </span>
+            </button>
+          </div>
+        ) : (
+          /* Finance Mobile Layout: Dashboard, Reports, FAB (Deposit), Role */
+          <div className="grid grid-cols-4 items-center h-14 max-w-sm mx-auto px-4">
+            {/* Dashboard */}
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`flex flex-col items-center justify-center py-1 transition-all active:scale-95 ${
+                activeTab === 'dashboard' ? 'text-[#00AEEF] font-bold' : 'text-stone-400'
+              }`}
+            >
+              <LayoutDashboard className="w-5 h-5" />
+              <span className="text-[10px] mt-1 font-medium">Dashboard</span>
+            </button>
+
+            {/* Elevated Center FAB: Request Deposit from GM */}
+            <div className="flex items-center justify-center -mt-6">
+              <button
+                onClick={() => setIsDepositModalOpen(true)}
+                className="w-13 h-13 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-950/90 active:scale-90 transition-all border-3 border-stone-900 focus:outline-hidden"
+                title="Request Deposit from GM"
+                aria-label="Request Deposit from GM"
+              >
+                <Coins className="w-6 h-6" />
               </button>
             </div>
 

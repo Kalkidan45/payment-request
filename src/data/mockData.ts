@@ -1,4 +1,4 @@
-import { User, Requisition, PettyCashFund } from '../types';
+import { User, Requisition, PettyCashFund, DepositRequest } from '../types';
 
 export const INITIAL_USERS: User[] = [
   {
@@ -51,6 +51,23 @@ export const INITIAL_PETTY_CASH_FUND: PettyCashFund = {
   currentBalance: 37820,
   monthAllocated: 60000,
 };
+
+export const INITIAL_DEPOSIT_REQUESTS: DepositRequest[] = [
+  {
+    id: 'dep-101',
+    referenceNumber: 'DEP-2026-001',
+    amount: 60000,
+    title: 'Initial October Petty Cash Float Top-Up',
+    description: 'Requested by Finance Department for branch operations and daily store expenses.',
+    paymentMethod: 'CBE Birr',
+    status: 'approved_deposit',
+    requesterId: 'usr-2',
+    requesterName: 'Bethelhem Desta',
+    createdAt: '2026-10-01T08:00:00Z',
+    updatedAt: '2026-10-01T09:30:00Z',
+    approvedBy: 'Solomon Girma',
+  },
+];
 
 export const INITIAL_REQUISITIONS: Requisition[] = [
   {

@@ -50,7 +50,7 @@ export const Navbar: React.FC = () => {
               <Logo size="md" inverted={true} />
             </button>
 
-            {/* Navigation for Manager & Finance ONLY */}
+            {/* Navigation for Manager & Finance */}
             {isManagerOrFinance ? (
               <nav className="hidden md:flex items-center gap-1 ml-6 border-l border-stone-800 pl-6 text-sm">
                 <button
@@ -65,17 +65,19 @@ export const Navbar: React.FC = () => {
                   Dashboard
                 </button>
 
-                <button
-                  onClick={() => setActiveTab('requisitions')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors font-medium cursor-pointer ${
-                    activeTab === 'requisitions'
-                      ? 'bg-sky-500/20 text-[#00AEEF]'
-                      : 'text-stone-300 hover:text-white hover:bg-stone-800'
-                  }`}
-                >
-                  <Layers className="w-4 h-4" />
-                  All Company Vouchers
-                </button>
+                {isManager && (
+                  <button
+                    onClick={() => setActiveTab('requisitions')}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors font-medium cursor-pointer ${
+                      activeTab === 'requisitions'
+                        ? 'bg-sky-500/20 text-[#00AEEF]'
+                        : 'text-stone-300 hover:text-white hover:bg-stone-800'
+                    }`}
+                  >
+                    <Layers className="w-4 h-4" />
+                    All Company Vouchers
+                  </button>
+                )}
 
                 <button
                   onClick={() => setActiveTab('reports')}
@@ -89,13 +91,15 @@ export const Navbar: React.FC = () => {
                   Monthly Report
                 </button>
 
-                <button
-                  onClick={() => setIsStaffDirectoryOpen(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors font-medium text-stone-300 hover:text-white hover:bg-stone-800 cursor-pointer"
-                >
-                  <Users className="w-4 h-4" />
-                  {isManager ? 'Manage & Edit Users' : 'Staff Directory'}
-                </button>
+                {isManager && (
+                  <button
+                    onClick={() => setIsStaffDirectoryOpen(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors font-medium text-stone-300 hover:text-white hover:bg-stone-800 cursor-pointer"
+                  >
+                    <Users className="w-4 h-4" />
+                    Manage & Edit Users
+                  </button>
+                )}
               </nav>
             ) : (
               /* Navigation for Staff / Requester (Request page only!) */
@@ -136,13 +140,15 @@ export const Navbar: React.FC = () => {
             )}
 
             {/* Quick Action: New Requisition Button (compact on mobile) */}
-            <button
-              onClick={() => setIsNewReqModalOpen(true)}
-              className="hidden sm:flex items-center gap-1.5 bg-[#00AEEF] hover:bg-[#0284C7] active:bg-[#0369A1] text-white px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm shadow-sky-900/40 cursor-pointer"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Request Cash</span>
-            </button>
+            {currentUser.role !== 'finance' && (
+              <button
+                onClick={() => setIsNewReqModalOpen(true)}
+                className="hidden sm:flex items-center gap-1.5 bg-[#00AEEF] hover:bg-[#0284C7] active:bg-[#0369A1] text-white px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm shadow-sky-900/40 cursor-pointer"
+              >
+                <Plus className="w-4 h-4 stroke-[3]" />
+                <span>Request Cash</span>
+              </button>
+            )}
 
             {/* Current Active Role Indicator */}
             <div className="flex items-center gap-1.5 bg-stone-800 border border-stone-700 text-stone-200 px-2.5 py-1.5 rounded-xl text-xs font-medium">

@@ -9,6 +9,7 @@ import { StaffRequestView } from './components/StaffRequestView';
 import { NewRequisitionModal } from './components/NewRequisitionModal';
 import { RequisitionDetailModal } from './components/RequisitionDetailModal';
 import { StaffDirectoryModal } from './components/StaffDirectoryModal';
+import { DepositRequestModal } from './components/DepositRequestModal';
 import { PrintVoucherModal } from './components/PrintVoucherModal';
 import { LoginModal } from './components/LoginModal';
 
@@ -48,6 +49,7 @@ const AppContent: React.FC = () => {
       <NewRequisitionModal />
       <RequisitionDetailModal />
       <StaffDirectoryModal />
+      <DepositRequestModal />
       <PrintVoucherModal />
     </div>
   );

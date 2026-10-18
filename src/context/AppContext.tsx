@@ -3,6 +3,7 @@ import {
   User,
   Requisition,
   PettyCashFund,
+  DepositRequest,
   Role,
   PaymentMethod,
   BranchLocation,
@@ -12,6 +13,7 @@ import {
   INITIAL_USERS,
   INITIAL_REQUISITIONS,
   INITIAL_PETTY_CASH_FUND,
+  INITIAL_DEPOSIT_REQUESTS,
 } from '../data/mockData';
 import { db } from '../firebase';
 import {
@@ -37,6 +39,9 @@ interface AppContextType {
   setIsNewReqModalOpen: (open: boolean) => void;
   isStaffDirectoryOpen: boolean;
   setIsStaffDirectoryOpen: (open: boolean) => void;
+  depositRequests: DepositRequest[];
+  isDepositModalOpen: boolean;
+  setIsDepositModalOpen: (open: boolean) => void;
   isPrintModalOpen: boolean;
   setIsPrintModalOpen: (open: boolean) => void;
   voucherToPrint: Requisition | null;
@@ -111,6 +116,14 @@ interface AppContextType {
     comment?: string
   ) => Promise<void>;
   rejectRequisition: (reqId: string, reason: string) => Promise<void>;
+  createDepositRequest: (data: {
+    amount: number;
+    title: string;
+    description: string;
+    paymentMethod: PaymentMethod;
+  }) => Promise<DepositRequest>;
+  approveDepositRequest: (depositId: string, comment?: string) => Promise<void>;
+  rejectDepositRequest: (depositId: string, reason: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -237,6 +250,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Modals & Filters
   const [selectedRequisition, setSelectedRequisition] = useState<Requisition | null>(null);
   const [isNewReqModalOpen, setIsNewReqModalOpen] = useState(false);
+  const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [isStaffDirectoryOpen, setIsStaffDirectoryOpen] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [voucherToPrint, setVoucherToPrint] = useState<Requisition | null>(null);
@@ -244,6 +258,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     'all' | 'pending' | 'approved' | 'disbursed' | 'rejected'
   >('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [depositRequests, setDepositRequests] = useState<DepositRequest[]>(INITIAL_DEPOSIT_REQUESTS);
 
   // -------------------------------------------------------------
   // FIREBASE FIRESTORE SYNC: Users, Requisitions, Petty Cash Fund
@@ -252,6 +267,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let unsubscribeUsers: (() => void) | undefined;
     let unsubscribeReqs: (() => void) | undefined;
     let unsubscribeFund: (() => void) | undefined;
+    let unsubscribeDeposits: (() => void) | undefined;
 
     const setupFirestore = async () => {
       try {
@@ -308,6 +324,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             await setDoc(fundDocRef, INITIAL_PETTY_CASH_FUND);
           }
         });
+
+        // 4. Deposit Requests Collection
+        const depositsCol = collection(db, 'depositRequests');
+        unsubscribeDeposits = onSnapshot(depositsCol, async (snapshot) => {
+          if (!snapshot.empty) {
+            const firestoreDeps = snapshot.docs.map((docSnap) => docSnap.data() as DepositRequest);
+            firestoreDeps.sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+            setDepositRequests(firestoreDeps);
+          } else {
+            for (const d of INITIAL_DEPOSIT_REQUESTS) {
+              await setDoc(doc(db, 'depositRequests', d.id), d);
+            }
+          }
+        });
       } catch (err) {
         console.warn('Firestore real-time connection error, using local state:', err);
       }
@@ -319,6 +351,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (unsubscribeUsers) unsubscribeUsers();
       if (unsubscribeReqs) unsubscribeReqs();
       if (unsubscribeFund) unsubscribeFund();
+      if (unsubscribeDeposits) unsubscribeDeposits();
     };
   }, []);
 
@@ -814,12 +847,122 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRequisitions((prev) => prev.map((r) => (r.id === reqId ? updatedReq : r)));
   };
 
+  const createDepositRequest = async (data: {
+    amount: number;
+    title: string;
+    description: string;
+    paymentMethod: PaymentMethod;
+  }): Promise<DepositRequest> => {
+    if (!currentUser) throw new Error('Must be logged in');
+    if (currentUser.role !== 'finance' && currentUser.role !== 'general_manager') {
+      throw new Error('Unauthorized: Only Finance can request deposit funds from the General Manager.');
+    }
+
+    const now = new Date().toISOString();
+    const newDep: DepositRequest = {
+      id: `dep-${Date.now()}`,
+      referenceNumber: `DEP-2026-${depositRequests.length + 101}`,
+      amount: data.amount,
+      title: data.title,
+      description: data.description,
+      paymentMethod: data.paymentMethod,
+      status: 'pending_gm_deposit',
+      requesterId: currentUser.id,
+      requesterName: currentUser.name,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    try {
+      await setDoc(doc(db, 'depositRequests', newDep.id), newDep);
+    } catch (e) {
+      console.warn('Firestore deposit request save fallback:', e);
+    }
+
+    setDepositRequests((prev) => [newDep, ...prev]);
+    return newDep;
+  };
+
+  const approveDepositRequest = async (depositId: string, comment?: string) => {
+    if (!currentUser || currentUser.role !== 'general_manager') {
+      alert('Unauthorized: Only the General Manager can approve fund deposits.');
+      return;
+    }
+
+    const target = depositRequests.find((d) => d.id === depositId);
+    if (!target) return;
+
+    const now = new Date().toISOString();
+    const updatedDep: DepositRequest = {
+      ...target,
+      status: 'approved_deposit',
+      updatedAt: now,
+      approvedBy: currentUser.name,
+    };
+
+    const newBalance = pettyCashFund.currentBalance + target.amount;
+    const newTotalAllocated = pettyCashFund.totalAllocated + target.amount;
+
+    try {
+      await updateDoc(doc(db, 'depositRequests', depositId), {
+        status: updatedDep.status,
+        updatedAt: updatedDep.updatedAt,
+        approvedBy: updatedDep.approvedBy,
+      });
+
+      await updateDoc(doc(db, 'pettyCashFund', 'main'), {
+        currentBalance: newBalance,
+        totalAllocated: newTotalAllocated,
+      });
+    } catch (e) {
+      console.warn('Firestore deposit approval fallback:', e);
+    }
+
+    setDepositRequests((prev) => prev.map((d) => (d.id === depositId ? updatedDep : d)));
+    setPettyCashFund((prev) => ({
+      ...prev,
+      currentBalance: newBalance,
+      totalAllocated: newTotalAllocated,
+    }));
+  };
+
+  const rejectDepositRequest = async (depositId: string, reason: string) => {
+    if (!currentUser || currentUser.role !== 'general_manager') {
+      alert('Unauthorized: Only the General Manager can reject fund deposits.');
+      return;
+    }
+
+    const target = depositRequests.find((d) => d.id === depositId);
+    if (!target) return;
+
+    const now = new Date().toISOString();
+    const updatedDep: DepositRequest = {
+      ...target,
+      status: 'rejected_deposit',
+      updatedAt: now,
+      rejectionReason: reason,
+    };
+
+    try {
+      await updateDoc(doc(db, 'depositRequests', depositId), {
+        status: updatedDep.status,
+        rejectionReason: updatedDep.rejectionReason,
+        updatedAt: updatedDep.updatedAt,
+      });
+    } catch (e) {
+      console.warn('Firestore deposit rejection fallback:', e);
+    }
+
+    setDepositRequests((prev) => prev.map((d) => (d.id === depositId ? updatedDep : d)));
+  };
+
   return (
     <AppContext.Provider
       value={{
         currentUser,
         users,
         requisitions,
+        depositRequests,
         pettyCashFund,
         activeTab,
         setActiveTab,
@@ -827,6 +970,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setSelectedRequisition,
         isNewReqModalOpen,
         setIsNewReqModalOpen,
+        isDepositModalOpen,
+        setIsDepositModalOpen,
         isStaffDirectoryOpen,
         setIsStaffDirectoryOpen,
         isPrintModalOpen,
@@ -861,6 +1006,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         approveRequisition,
         disburseRequisition,
         rejectRequisition,
+        createDepositRequest,
+        approveDepositRequest,
+        rejectDepositRequest,
       }}
     >
       {children}
