@@ -11,7 +11,7 @@ import {
   Coins,
   CreditCard,
 } from 'lucide-react';
-import { BranchLocation } from '../types';
+import { BranchLocation, BRANCH_LOCATIONS } from '../types';
 
 export const MonthlyReport: React.FC = () => {
   const { requisitions, depositRequests, setSelectedRequisition } = useApp();
@@ -173,12 +173,12 @@ export const MonthlyReport: React.FC = () => {
               onChange={(e) => setSelectedBranch(e.target.value)}
               className="bg-transparent font-medium text-stone-800 focus:outline-hidden cursor-pointer"
             >
-              <option value="all">All Branches</option>
-              <option value="Bole Medhanialem Flagship">Bole Medhanialem</option>
-              <option value="Piassa Kids Corner">Piassa Kids Corner</option>
-              <option value="Kazanchis Atelier">Kazanchis Atelier</option>
-              <option value="CMC Kids Boutique">CMC Kids Boutique</option>
-              <option value="Head Office / Warehouse">Head Office / Warehouse</option>
+              <option value="all">All Shops</option>
+              {BRANCH_LOCATIONS.map((loc) => (
+                <option key={loc} value={loc}>
+                  {loc}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -395,7 +395,7 @@ export const MonthlyReport: React.FC = () => {
               </div>
               <h3 className="text-xs font-semibold text-stone-800 mt-1">{r.title}</h3>
               <div className="text-[11px] text-stone-500 mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5">
-                <span>{r.branch.split(' ')[0]}</span>
+                <span>{r.branch}</span>
                 <span>·</span>
                 <span>{r.paymentMethod}</span>
                 <span>·</span>
@@ -436,7 +436,7 @@ export const MonthlyReport: React.FC = () => {
                     {r.title}
                   </td>
                   <td className="py-3 px-4 text-stone-600 whitespace-nowrap">
-                    {r.branch.split(' ')[0]}
+                    {r.branch}
                   </td>
                   <td className="py-3 px-4 text-stone-700 whitespace-nowrap">{r.paymentMethod}</td>
                   <td className="py-3 px-4 text-stone-600 font-mono text-[11px] whitespace-nowrap">

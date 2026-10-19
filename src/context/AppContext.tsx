@@ -138,6 +138,20 @@ const sanitizeRole = (roleStr?: string): Role => {
   return 'staff';
 };
 
+const sanitizeBranch = (b?: string): BranchLocation => {
+  if (!b) return 'Shop 1';
+  if (b === 'Head Office' || b.toLowerCase().includes('head office')) return 'Head Office';
+  if (b === 'Sports' || b.toLowerCase().includes('sport')) return 'Sports';
+  if (b === 'Shop 1' || b.toLowerCase().includes('bole')) return 'Shop 1';
+  if (b === 'Shop 10' || b.toLowerCase().includes('cmc')) return 'Shop 10';
+  if (b === 'Shop 6' || b.toLowerCase().includes('piassa')) return 'Shop 6';
+  if (b === 'Shop 7' || b.toLowerCase().includes('kazanchis')) return 'Shop 7';
+  if (['Head Office', 'Sports', 'Shop 1', 'Shop 10', 'Shop 6', 'Shop 7'].includes(b)) {
+    return b as BranchLocation;
+  }
+  return 'Shop 1';
+};
+
 const sanitizeUser = (u: any): User => {
   if (!u) return INITIAL_USERS[0];
   const matched = INITIAL_USERS.find((init) => init.id === u.id || init.username === u.username);
@@ -155,7 +169,7 @@ const sanitizeUser = (u: any): User => {
         ? 'Finance Team Officer'
         : 'Store Requester'),
     department: u.department || 'Retail Operations',
-    branch: u.branch || 'Bole Medhanialem Flagship',
+    branch: sanitizeBranch(u.branch),
     phone: u.phone || '+251 91 000 0000',
     avatarUrl:
       u.avatarUrl ||
@@ -177,6 +191,7 @@ const sanitizeRequisition = (r: any): Requisition => {
 
   return {
     ...r,
+    branch: sanitizeBranch(r.branch),
     status,
     amount: typeof r.amount === 'number' && !isNaN(r.amount) ? r.amount : 0,
     history: Array.isArray(r.history) ? r.history : [],

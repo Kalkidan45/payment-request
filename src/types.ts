@@ -1,11 +1,21 @@
 export type Role = 'staff' | 'finance' | 'general_manager';
 
 export type BranchLocation =
-  | 'Bole Medhanialem Flagship'
-  | 'Piassa Kids Corner'
-  | 'Kazanchis Atelier'
-  | 'CMC Kids Boutique'
-  | 'Head Office / Warehouse';
+  | 'Head Office'
+  | 'Sports'
+  | 'Shop 1'
+  | 'Shop 10'
+  | 'Shop 6'
+  | 'Shop 7';
+
+export const BRANCH_LOCATIONS: BranchLocation[] = [
+  'Head Office',
+  'Sports',
+  'Shop 1',
+  'Shop 10',
+  'Shop 6',
+  'Shop 7',
+];
 
 export type RequisitionStatus =
   | 'pending_finance' // Stage 1: Submitted by Staff, awaiting Finance Check & Verification

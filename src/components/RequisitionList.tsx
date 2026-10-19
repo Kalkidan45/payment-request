@@ -16,7 +16,7 @@ import {
   CheckCircle,
   X,
 } from 'lucide-react';
-import { RequisitionStatus } from '../types';
+import { RequisitionStatus, BRANCH_LOCATIONS } from '../types';
 
 export const RequisitionList: React.FC = () => {
   const {
@@ -121,12 +121,12 @@ export const RequisitionList: React.FC = () => {
               onChange={(e) => setBranchFilter(e.target.value)}
               className="py-2 px-3 bg-stone-50 border border-stone-200 rounded-xl text-xs text-stone-800 focus:outline-hidden cursor-pointer"
             >
-              <option value="all">All Branches</option>
-              <option value="Bole Medhanialem Flagship">Bole Medhanialem</option>
-              <option value="Piassa Kids Corner">Piassa Corner</option>
-              <option value="Kazanchis Atelier">Kazanchis Atelier</option>
-              <option value="CMC Kids Boutique">CMC Boutique</option>
-              <option value="Head Office / Warehouse">Head Office</option>
+              <option value="all">All Shops / Locations</option>
+              {BRANCH_LOCATIONS.map((loc) => (
+                <option key={loc} value={loc}>
+                  {loc}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -139,12 +139,12 @@ export const RequisitionList: React.FC = () => {
               onChange={(e) => setBranchFilter(e.target.value)}
               className="w-full py-2 px-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs text-stone-800"
             >
-              <option value="all">All Branches</option>
-              <option value="Bole Medhanialem Flagship">Bole Medhanialem</option>
-              <option value="Piassa Kids Corner">Piassa Corner</option>
-              <option value="Kazanchis Atelier">Kazanchis Atelier</option>
-              <option value="CMC Kids Boutique">CMC Boutique</option>
-              <option value="Head Office / Warehouse">Head Office</option>
+              <option value="all">All Shops / Locations</option>
+              {BRANCH_LOCATIONS.map((loc) => (
+                <option key={loc} value={loc}>
+                  {loc}
+                </option>
+              ))}
             </select>
           </div>
         )}

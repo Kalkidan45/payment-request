@@ -9,7 +9,7 @@ import {
   Sparkles,
   CreditCard,
 } from 'lucide-react';
-import { BranchLocation, PaymentMethod } from '../types';
+import { BranchLocation, PaymentMethod, BRANCH_LOCATIONS } from '../types';
 
 export const NewRequisitionModal: React.FC = () => {
   const { isNewReqModalOpen, setIsNewReqModalOpen, createRequisition, currentUser } = useApp();
@@ -17,7 +17,7 @@ export const NewRequisitionModal: React.FC = () => {
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState<number>(1200);
   const [branch, setBranch] = useState<BranchLocation>(
-    currentUser?.branch || 'Bole Medhanialem Flagship'
+    currentUser?.branch || 'Shop 1'
   );
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Physical Cash');
   const [description, setDescription] = useState('');
@@ -168,11 +168,11 @@ export const NewRequisitionModal: React.FC = () => {
                 onChange={(e) => setBranch(e.target.value as BranchLocation)}
                 className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-base sm:text-xs text-stone-900 bg-white focus:outline-hidden focus:border-[#00AEEF] cursor-pointer min-h-[44px]"
               >
-                <option value="Bole Medhanialem Flagship">Bole Medhanialem Flagship</option>
-                <option value="Piassa Kids Corner">Piassa Kids Corner</option>
-                <option value="Kazanchis Atelier">Kazanchis Atelier</option>
-                <option value="CMC Kids Boutique">CMC Kids Boutique</option>
-                <option value="Head Office / Warehouse">Head Office / Warehouse</option>
+                {BRANCH_LOCATIONS.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {loc}
+                  </option>
+                ))}
               </select>
             </div>
 

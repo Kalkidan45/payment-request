@@ -337,7 +337,7 @@ export const Dashboard: React.FC = () => {
                   <div className="text-[11px] text-stone-500 mt-1 flex items-center gap-2">
                     <span>By: {req.requesterName}</span>
                     <span>·</span>
-                    <span>{req.branch.split(' ')[0]}</span>
+                    <span>{req.branch}</span>
                     <span>·</span>
                     <span className="font-medium text-amber-700">
                       {req.status === 'pending_finance'

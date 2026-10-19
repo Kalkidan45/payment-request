@@ -19,7 +19,7 @@ import {
   AlertCircle,
   Phone,
 } from 'lucide-react';
-import { Role, BranchLocation, User } from '../types';
+import { Role, BranchLocation, User, BRANCH_LOCATIONS } from '../types';
 
 export const StaffDirectoryModal: React.FC = () => {
   const {
@@ -45,7 +45,7 @@ export const StaffDirectoryModal: React.FC = () => {
   const [addRole, setAddRole] = useState<Role>('staff');
   const [addRoleTitle, setAddRoleTitle] = useState('Sales Associate');
   const [addDepartment, setAddDepartment] = useState('Retail Sales');
-  const [addBranch, setAddBranch] = useState<BranchLocation>('Bole Medhanialem Flagship');
+  const [addBranch, setAddBranch] = useState<BranchLocation>('Shop 1');
   const [addPhone, setAddPhone] = useState('+251 9');
 
   // Edit form state
@@ -56,7 +56,7 @@ export const StaffDirectoryModal: React.FC = () => {
   const [editRole, setEditRole] = useState<Role>('staff');
   const [editRoleTitle, setEditRoleTitle] = useState('');
   const [editDepartment, setEditDepartment] = useState('');
-  const [editBranch, setEditBranch] = useState<BranchLocation>('Bole Medhanialem Flagship');
+  const [editBranch, setEditBranch] = useState<BranchLocation>('Shop 1');
   const [editPhone, setEditPhone] = useState('');
   const [showEditPassword, setShowEditPassword] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -391,11 +391,11 @@ export const StaffDirectoryModal: React.FC = () => {
                     onChange={(e) => setEditBranch(e.target.value as BranchLocation)}
                     className="w-full p-2.5 border border-stone-200 rounded-xl bg-white focus:outline-hidden focus:border-[#00AEEF]"
                   >
-                    <option value="Bole Medhanialem Flagship">Bole Medhanialem Flagship</option>
-                    <option value="Piassa Kids Corner">Piassa Kids Corner</option>
-                    <option value="Kazanchis Atelier">Kazanchis Atelier</option>
-                    <option value="CMC Kids Boutique">CMC Kids Boutique</option>
-                    <option value="Head Office / Warehouse">Head Office / Warehouse</option>
+                    {BRANCH_LOCATIONS.map((loc) => (
+                      <option key={loc} value={loc}>
+                        {loc}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -605,11 +605,11 @@ export const StaffDirectoryModal: React.FC = () => {
                     onChange={(e) => setAddBranch(e.target.value as BranchLocation)}
                     className="w-full p-2 border border-stone-200 rounded-xl bg-white"
                   >
-                    <option value="Bole Medhanialem Flagship">Bole Medhanialem Flagship</option>
-                    <option value="Piassa Kids Corner">Piassa Kids Corner</option>
-                    <option value="Kazanchis Atelier">Kazanchis Atelier</option>
-                    <option value="CMC Kids Boutique">CMC Kids Boutique</option>
-                    <option value="Head Office / Warehouse">Head Office / Warehouse</option>
+                    {BRANCH_LOCATIONS.map((loc) => (
+                      <option key={loc} value={loc}>
+                        {loc}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -690,7 +690,7 @@ export const StaffDirectoryModal: React.FC = () => {
                         <div className="text-[11px] text-stone-500 flex items-center gap-2 mt-0.5 flex-wrap">
                           <span className="flex items-center gap-1">
                             <Building2 className="w-3 h-3 text-stone-400" />
-                            {u.branch.split(' ')[0]}
+                            {u.branch}
                           </span>
                           <span>·</span>
                           <span className="flex items-center gap-1">
