@@ -23,7 +23,7 @@ export const NewRequisitionModal: React.FC = () => {
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!isNewReqModalOpen || !currentUser) return null;
+  if (!isNewReqModalOpen || !currentUser || currentUser.role === 'finance' || currentUser.role === 'general_manager') return null;
 
   // Preset quick suggestions for retail stores
   const quickSuggestions = [

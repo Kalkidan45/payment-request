@@ -17,6 +17,8 @@ import {
   FileCheck,
   CheckCircle,
   Users,
+  RotateCcw,
+  User,
 } from 'lucide-react';
 import { Requisition, BranchLocation } from '../types';
 
@@ -41,6 +43,7 @@ export const Dashboard: React.FC = () => {
     setIsDepositModalOpen,
     approveDepositRequest,
     rejectDepositRequest,
+    clearAllData,
   } = useApp();
 
   if (!currentUser) return null;
@@ -83,11 +86,9 @@ export const Dashboard: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 sm:p-5 rounded-2xl border border-stone-200 shadow-xs">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <img
-              src={currentUser.avatarUrl}
-              alt={currentUser.name}
-              className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl object-cover border border-sky-300 shadow-xs"
-            />
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-sky-100 border border-sky-300 flex items-center justify-center text-[#00AEEF] shadow-xs">
+              <User className="w-6 h-6" />
+            </div>
             <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></span>
           </div>
           <div>
@@ -167,7 +168,10 @@ export const Dashboard: React.FC = () => {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6 mt-4 sm:mt-5">
             {/* Metric 1: Stage 1 Needs Finance Check */}
             <div
-              onClick={() => setActiveTab('requisitions')}
+              onClick={() => {
+                if (currentUser.role === 'general_manager') setActiveTab('requisitions');
+                else setActiveTab('reports');
+              }}
               className="bg-stone-800/60 hover:bg-stone-800/90 transition-colors rounded-xl p-3 sm:p-4 border border-stone-700/60 cursor-pointer"
             >
               <div className="flex items-center justify-between text-[11px] sm:text-xs text-amber-300 font-medium">
@@ -184,7 +188,10 @@ export const Dashboard: React.FC = () => {
 
             {/* Metric 2: Stage 2 Needs GM Approval */}
             <div
-              onClick={() => setActiveTab('requisitions')}
+              onClick={() => {
+                if (currentUser.role === 'general_manager') setActiveTab('requisitions');
+                else setActiveTab('reports');
+              }}
               className="bg-stone-800/60 hover:bg-stone-800/90 transition-colors rounded-xl p-3 sm:p-4 border border-stone-700/60 cursor-pointer"
             >
               <div className="flex items-center justify-between text-[11px] sm:text-xs text-indigo-300 font-medium">
@@ -201,7 +208,10 @@ export const Dashboard: React.FC = () => {
 
             {/* Metric 3: Stage 3 GM Approved (Ready for Payment) */}
             <div
-              onClick={() => setActiveTab('requisitions')}
+              onClick={() => {
+                if (currentUser.role === 'general_manager') setActiveTab('requisitions');
+                else setActiveTab('reports');
+              }}
               className="bg-stone-800/60 hover:bg-stone-800/90 transition-colors rounded-xl p-3 sm:p-4 border border-stone-700/60 cursor-pointer"
             >
               <div className="flex items-center justify-between text-[11px] sm:text-xs text-emerald-300 font-medium">
@@ -429,13 +439,23 @@ export const Dashboard: React.FC = () => {
                 Petty cash vouchers submitted across Kurtta branches
               </p>
             </div>
-            <button
-              onClick={() => setActiveTab('requisitions')}
-              className="text-xs font-semibold text-[#0284C7] hover:text-[#0369A1] flex items-center gap-1 cursor-pointer"
-            >
-              <span>View All</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
+            {currentUser.role === 'general_manager' ? (
+              <button
+                onClick={() => setActiveTab('requisitions')}
+                className="text-xs font-semibold text-[#0284C7] hover:text-[#0369A1] flex items-center gap-1 cursor-pointer"
+              >
+                <span>View All Vouchers</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                onClick={() => setActiveTab('reports')}
+                className="text-xs font-semibold text-[#0284C7] hover:text-[#0369A1] flex items-center gap-1 cursor-pointer"
+              >
+                <span>View Monthly Report</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           <div className="divide-y divide-stone-100">

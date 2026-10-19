@@ -14,7 +14,7 @@ import {
 import { BranchLocation, BRANCH_LOCATIONS } from '../types';
 
 export const MonthlyReport: React.FC = () => {
-  const { requisitions, depositRequests, setSelectedRequisition } = useApp();
+  const { requisitions, depositRequests, pettyCashFund, setSelectedRequisition } = useApp();
 
   const [selectedMonth, setSelectedMonth] = useState<'2026-10' | '2026-09' | 'all'>('2026-10');
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
@@ -41,6 +41,20 @@ export const MonthlyReport: React.FC = () => {
       return true;
     });
   }, [requisitions, selectedMonth, selectedBranch]);
+
+  // Pending requested amounts (Staff requests submitted, awaiting GM or payout)
+  const filteredPending = useMemo(() => {
+    return requisitions.filter((r) => {
+      if (r.status !== 'pending_finance' && r.status !== 'pending_gm' && r.status !== 'approved') return false;
+      if (selectedMonth !== 'all' && !r.createdAt.startsWith(selectedMonth)) return false;
+      if (selectedBranch !== 'all' && r.branch !== selectedBranch) return false;
+      return true;
+    });
+  }, [requisitions, selectedMonth, selectedBranch]);
+
+  const totalRequestedPending = useMemo(() => {
+    return filteredPending.reduce((acc, curr) => acc + curr.amount, 0);
+  }, [filteredPending]);
 
   // Overall Birr spent for the selection
   const totalBirrSpent = useMemo(() => {
@@ -197,8 +211,9 @@ export const MonthlyReport: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Funds Deposited (Money In) */}
         <div className="bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500 text-white rounded-2xl p-5 shadow-sm">
-          <div className="text-xs uppercase tracking-wider text-emerald-100 font-bold">
-            Fund Deposits In (Money In)
+          <div className="text-xs uppercase tracking-wider text-emerald-100 font-bold flex items-center justify-between">
+            <span>Fund Deposits (Money In)</span>
+            <Coins className="w-4 h-4 text-emerald-200" />
           </div>
           <div className="text-2xl sm:text-3xl font-black font-mono mt-2">
             {formatBirr(totalBirrDeposited)}
@@ -210,41 +225,67 @@ export const MonthlyReport: React.FC = () => {
 
         {/* Total Birr Spent (Money Out) */}
         <div className="bg-gradient-to-br from-[#0284C7] via-[#00AEEF] to-[#38BDF8] text-white rounded-2xl p-5 shadow-sm">
-          <div className="text-xs uppercase tracking-wider text-sky-100 font-bold">
-            Petty Cash Spent (Money Out)
+          <div className="text-xs uppercase tracking-wider text-sky-100 font-bold flex items-center justify-between">
+            <span>Disbursed (Money Out)</span>
+            <TrendingDown className="w-4 h-4 text-sky-200" />
           </div>
           <div className="text-2xl sm:text-3xl font-black font-mono mt-2">
             {formatBirr(totalBirrSpent)}
           </div>
           <div className="text-xs text-sky-100/90 mt-2">
-            Across {filteredDisbursed.length} disbursed vouchers
+            Across {filteredDisbursed.length} settled payouts
           </div>
         </div>
 
-        {/* Net Balance Movement */}
+        {/* Pending Requested Amounts (Awaiting check, approval or payout) */}
         <div className="bg-white rounded-2xl p-5 border border-stone-200 shadow-xs">
-          <div className="text-xs uppercase tracking-wider text-stone-500 font-bold">
-            Net Cash Flow Movement
+          <div className="text-xs uppercase tracking-wider text-amber-600 font-bold flex items-center justify-between">
+            <span>Requested in Pipeline</span>
+            <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full font-bold">
+              {filteredPending.length} items
+            </span>
           </div>
-          <div className={`text-2xl font-black font-mono mt-2 ${totalBirrDeposited - totalBirrSpent >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-            {formatBirr(totalBirrDeposited - totalBirrSpent)}
+          <div className="text-2xl font-black font-mono mt-2 text-amber-600">
+            {formatBirr(totalRequestedPending)}
           </div>
           <div className="text-xs text-stone-500 mt-2">
-            Deposits minus disbursements
+            Staff requests awaiting GM/payout
           </div>
         </div>
 
-        {/* Average Voucher Amount */}
-        <div className="bg-white rounded-2xl p-5 border border-stone-200 shadow-xs">
-          <div className="text-xs uppercase tracking-wider text-stone-500 font-bold">
-            Average Requisition Ticket
+        {/* Net Available Balance (Deposits minus All Disbursed & Pending) */}
+        <div className="bg-stone-900 text-white rounded-2xl p-5 shadow-xs border border-stone-800">
+          <div className="text-xs uppercase tracking-wider text-stone-400 font-bold flex items-center justify-between">
+            <span>Net Available Balance</span>
+            <span className="text-[10px] bg-stone-800 text-stone-300 px-1.5 py-0.5 rounded-full font-mono">
+              Balance
+            </span>
           </div>
-          <div className="text-2xl font-black text-stone-900 font-mono mt-2">
-            {formatBirr(averageVoucherBirr)}
+          <div className={`text-2xl font-black font-mono mt-2 ${totalBirrDeposited - totalBirrSpent - totalRequestedPending >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            {formatBirr(totalBirrDeposited - totalBirrSpent - totalRequestedPending)}
           </div>
-          <div className="text-xs text-stone-500 mt-2">
-            Per approved petty cash payout
+          <div className="text-xs text-stone-400 mt-2">
+            Deposited minus spent & requested
           </div>
+        </div>
+      </div>
+
+      {/* Cash Flow Balance Equation Strip */}
+      <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 text-stone-700 font-medium flex-wrap">
+          <span className="font-bold text-stone-900 uppercase tracking-wider text-[11px]">System Fund Equation:</span>
+          <span className="font-mono text-emerald-700 font-bold">+{formatBirr(totalBirrDeposited)} (Deposited)</span>
+          <span className="text-stone-400 font-bold">−</span>
+          <span className="font-mono text-sky-700 font-bold">−{formatBirr(totalBirrSpent)} (Disbursed)</span>
+          <span className="text-stone-400 font-bold">−</span>
+          <span className="font-mono text-amber-700 font-bold">−{formatBirr(totalRequestedPending)} (Requested Pending)</span>
+          <span className="text-stone-400 font-bold">=</span>
+          <span className="font-mono font-black text-stone-900 bg-white px-2.5 py-1 rounded-lg border border-stone-200 shadow-2xs">
+            {formatBirr(totalBirrDeposited - totalBirrSpent - totalRequestedPending)} Available
+          </span>
+        </div>
+        <div className="text-stone-500 font-mono text-[11px] shrink-0">
+          Petty Cash Safe Balance: <strong className="text-stone-900">{formatBirr(pettyCashFund.currentBalance)}</strong>
         </div>
       </div>
 

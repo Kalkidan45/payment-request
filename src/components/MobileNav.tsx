@@ -75,11 +75,9 @@ export const MobileNav: React.FC = () => {
 
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div className="flex items-center gap-3">
-                <img
-                  src={currentUser.avatarUrl}
-                  alt={currentUser.name}
-                  className="w-12 h-12 rounded-2xl object-cover border-2 border-[#00AEEF]/40 shadow-xs"
-                />
+                <div className="w-12 h-12 rounded-2xl bg-sky-100 border-2 border-[#00AEEF]/40 flex items-center justify-center text-[#00AEEF] shadow-xs">
+                  <User className="w-6 h-6" />
+                </div>
                 <div>
                   <h3 className="text-base font-bold text-stone-900">{currentUser.name}</h3>
                   <p className="text-xs text-[#0284C7] font-semibold">{currentUser.roleTitle}</p>
@@ -208,12 +206,8 @@ export const MobileNav: React.FC = () => {
               onClick={() => setIsMobileMenuOpen(true)}
               className="flex flex-col items-center justify-center py-1 text-stone-400 active:scale-95 transition-all"
             >
-              <div className="relative">
-                <img
-                  src={currentUser.avatarUrl}
-                  alt={currentUser.name}
-                  className="w-5 h-5 rounded-full object-cover border border-[#00AEEF]"
-                />
+              <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-stone-800 text-[#00AEEF] border border-[#00AEEF]">
+                <User className="w-3 h-3" />
               </div>
               <span className="text-[10px] mt-1 font-semibold flex items-center gap-0.5">
                 Role <ChevronUp className="w-2.5 h-2.5" />
@@ -280,11 +274,9 @@ export const MobileNav: React.FC = () => {
               onClick={() => setIsMobileMenuOpen(true)}
               className="flex flex-col items-center justify-center py-1 text-stone-400 active:scale-95 transition-all"
             >
-              <img
-                src={currentUser.avatarUrl}
-                alt={currentUser.name}
-                className="w-5 h-5 rounded-full object-cover border border-[#00AEEF]"
-              />
+              <div className="flex items-center justify-center w-5 h-5 rounded-full bg-stone-800 text-[#00AEEF] border border-[#00AEEF]">
+                <User className="w-3 h-3" />
+              </div>
               <span className="text-[10px] mt-1 font-medium flex items-center gap-0.5">
                 Role <ChevronUp className="w-2.5 h-2.5" />
               </span>
@@ -332,11 +324,9 @@ export const MobileNav: React.FC = () => {
               onClick={() => setIsMobileMenuOpen(true)}
               className="flex flex-col items-center justify-center py-1 text-stone-400 active:scale-95 transition-all"
             >
-              <img
-                src={currentUser.avatarUrl}
-                alt={currentUser.name}
-                className="w-5 h-5 rounded-full object-cover border border-[#00AEEF]"
-              />
+              <div className="flex items-center justify-center w-5 h-5 rounded-full bg-stone-800 text-[#00AEEF] border border-[#00AEEF]">
+                <User className="w-3 h-3" />
+              </div>
               <span className="text-[10px] mt-1 font-medium flex items-center gap-0.5">
                 Role <ChevronUp className="w-2.5 h-2.5" />
               </span>

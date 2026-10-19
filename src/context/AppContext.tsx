@@ -124,6 +124,7 @@ interface AppContextType {
   }) => Promise<DepositRequest>;
   approveDepositRequest: (depositId: string, comment?: string) => Promise<void>;
   rejectDepositRequest: (depositId: string, reason: string) => Promise<void>;
+  clearAllData: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -322,10 +323,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             );
             setRequisitions(firestoreReqs);
           } else {
-            // Seed initial requisitions into Firestore
-            for (const r of INITIAL_REQUISITIONS) {
-              await setDoc(doc(db, 'requisitions', r.id), r);
-            }
+            setRequisitions([]);
           }
         });
 
@@ -335,8 +333,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (docSnap.exists()) {
             setPettyCashFund(docSnap.data() as PettyCashFund);
           } else {
-            // Seed initial fund
             await setDoc(fundDocRef, INITIAL_PETTY_CASH_FUND);
+            setPettyCashFund(INITIAL_PETTY_CASH_FUND);
           }
         });
 
@@ -350,9 +348,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             );
             setDepositRequests(firestoreDeps);
           } else {
-            for (const d of INITIAL_DEPOSIT_REQUESTS) {
-              await setDoc(doc(db, 'depositRequests', d.id), d);
-            }
+            setDepositRequests([]);
           }
         });
       } catch (err) {
@@ -475,18 +471,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       throw new Error('Unauthorized: Only the General Manager can create staff accounts.');
     }
 
-    if (userData.role === 'general_manager') {
-      const existingGM = users.find((u) => u.role === 'general_manager');
-      if (existingGM) {
-        throw new Error(
-          `System Rule: Kurtta Kids Clothes allows only ONE General Manager (${existingGM.name}). You can create Store Staff or Finance accounts.`
-        );
-      }
+    // Allowed to create additional General Manager / Admin or Finance / Staff roles as requested
+
+    const trimmedUsername = userData.username.trim().toLowerCase();
+    const existing = users.find((u) => u.username.toLowerCase() === trimmedUsername);
+    if (existing) {
+      throw new Error(`Username @${trimmedUsername} is already registered to ${existing.name}.`);
     }
 
     const newUser: User = {
       id: `usr-${Date.now()}`,
-      username: userData.username.trim().toLowerCase(),
+      username: trimmedUsername,
       password: userData.password || 'password123',
       name: userData.name,
       email: userData.email,
@@ -495,7 +490,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       department: userData.department,
       branch: userData.branch,
       phone: userData.phone,
-      avatarUrl: `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80`,
       createdAt: new Date().toISOString(),
     };
 
@@ -542,15 +536,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       throw new Error(`Username @${trimmedUsername} is already registered to ${duplicate.name}.`);
     }
 
-    // If changing role to general_manager, ensure only one GM exists in system
-    if (userData.role === 'general_manager' && existingUser.role !== 'general_manager') {
-      const existingGM = users.find((u) => u.role === 'general_manager' && u.id !== userId);
-      if (existingGM) {
-        throw new Error(
-          `System Rule: Only one General Manager is allowed (${existingGM.name}). Change their role first before promoting another account.`
-        );
-      }
-    }
+    // Allowed to promote multiple users to General Manager / Admin role
 
     const updatedUser: User = {
       ...existingUser,
@@ -621,8 +607,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     description: string;
   }): Promise<Requisition> => {
     if (!currentUser) throw new Error('Must be logged in');
+    if (currentUser.role === 'finance' || currentUser.role === 'general_manager') {
+      throw new Error('Finance and General Manager accounts cannot request new cash requisitions. Requisitions are submitted by Store Staff.');
+    }
 
-    const nextNumber = requisitions.length + 110;
+    const nextNumber = requisitions.length + 101;
     const now = '2026-10-04T' + new Date().toISOString().substring(11);
 
     const newReq: Requisition = {
@@ -971,6 +960,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDepositRequests((prev) => prev.map((d) => (d.id === depositId ? updatedDep : d)));
   };
 
+  const clearAllData = async (): Promise<void> => {
+    try {
+      // 1. Clear all requisitions in Firestore
+      const reqsCol = collection(db, 'requisitions');
+      const reqsSnap = await getDocs(reqsCol);
+      for (const d of reqsSnap.docs) {
+        await deleteDoc(d.ref);
+      }
+
+      // 2. Clear all deposit requests in Firestore
+      const depCol = collection(db, 'depositRequests');
+      const depSnap = await getDocs(depCol);
+      for (const d of depSnap.docs) {
+        await deleteDoc(d.ref);
+      }
+
+      // 3. Reset Petty Cash Fund
+      const resetFund: PettyCashFund = {
+        id: 'fund-main',
+        totalAllocated: 0,
+        currentBalance: 0,
+        monthAllocated: 0,
+      };
+      await setDoc(doc(db, 'pettyCashFund', 'main'), resetFund);
+
+      // 4. Update local state
+      setRequisitions([]);
+      setDepositRequests([]);
+      setPettyCashFund(resetFund);
+    } catch (e) {
+      console.warn('Firestore clearAllData fallback:', e);
+      setRequisitions([]);
+      setDepositRequests([]);
+      setPettyCashFund({
+        id: 'fund-main',
+        totalAllocated: 0,
+        currentBalance: 0,
+        monthAllocated: 0,
+      });
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -1024,6 +1055,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createDepositRequest,
         approveDepositRequest,
         rejectDepositRequest,
+        clearAllData,
       }}
     >
       {children}

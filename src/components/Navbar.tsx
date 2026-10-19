@@ -11,6 +11,9 @@ import {
   LayoutDashboard,
   ShieldCheck,
   Send,
+  Coins,
+  RotateCcw,
+  User,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -20,18 +23,40 @@ export const Navbar: React.FC = () => {
     activeTab,
     setActiveTab,
     setIsNewReqModalOpen,
+    setIsDepositModalOpen,
     setIsStaffDirectoryOpen,
+    clearAllData,
     liveSpentThisMonth,
     committedPendingAmount,
-    isManagerOrFinance,
-    isManager,
+    isGeneralManager,
+    isFinance,
   } = useApp();
 
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   if (!currentUser) return null;
 
   const currentRoleInfo = getRoleDisplay(currentUser.role);
+
+  const handleClearDataConfirm = async () => {
+    if (
+      window.confirm(
+        'Are you sure you want to clear all sample & entered vouchers and deposit requests? This will reset the petty cash balance to 0 so you can start with real live data.'
+      )
+    ) {
+      setIsResetting(true);
+      try {
+        await clearAllData();
+        alert('All sample and entered data has been cleared. System balance is reset to 0 ETB.');
+      } catch (e) {
+        alert('Failed to reset data: ' + String(e));
+      } finally {
+        setIsResetting(false);
+        setIsProfileDropdownOpen(false);
+      }
+    }
+  };
 
   return (
     <header className="sticky top-0 z-30 bg-stone-900 text-stone-100 border-b border-stone-800 shadow-md">
@@ -42,7 +67,7 @@ export const Navbar: React.FC = () => {
           <div className="flex items-center gap-4">
             <button
               onClick={() => {
-                if (isManagerOrFinance) setActiveTab('dashboard');
+                if (isGeneralManager || isFinance) setActiveTab('dashboard');
                 else setActiveTab('my_requests');
               }}
               className="text-left focus:outline-hidden group cursor-pointer"
@@ -50,8 +75,8 @@ export const Navbar: React.FC = () => {
               <Logo size="md" inverted={true} />
             </button>
 
-            {/* Navigation for Manager & Finance */}
-            {isManagerOrFinance ? (
+            {/* Navigation: GENERAL MANAGER (Has Everything) */}
+            {isGeneralManager && (
               <nav className="hidden md:flex items-center gap-1 ml-6 border-l border-stone-800 pl-6 text-sm">
                 <button
                   onClick={() => setActiveTab('dashboard')}
@@ -65,19 +90,17 @@ export const Navbar: React.FC = () => {
                   Dashboard
                 </button>
 
-                {isManager && (
-                  <button
-                    onClick={() => setActiveTab('requisitions')}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors font-medium cursor-pointer ${
-                      activeTab === 'requisitions'
-                        ? 'bg-sky-500/20 text-[#00AEEF]'
-                        : 'text-stone-300 hover:text-white hover:bg-stone-800'
-                    }`}
-                  >
-                    <Layers className="w-4 h-4" />
-                    All Company Vouchers
-                  </button>
-                )}
+                <button
+                  onClick={() => setActiveTab('requisitions')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors font-medium cursor-pointer ${
+                    activeTab === 'requisitions'
+                      ? 'bg-sky-500/20 text-[#00AEEF]'
+                      : 'text-stone-300 hover:text-white hover:bg-stone-800'
+                  }`}
+                >
+                  <Layers className="w-4 h-4" />
+                  All Company Vouchers
+                </button>
 
                 <button
                   onClick={() => setActiveTab('reports')}
@@ -91,18 +114,47 @@ export const Navbar: React.FC = () => {
                   Monthly Report
                 </button>
 
-                {isManager && (
-                  <button
-                    onClick={() => setIsStaffDirectoryOpen(true)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors font-medium text-stone-300 hover:text-white hover:bg-stone-800 cursor-pointer"
-                  >
-                    <Users className="w-4 h-4" />
-                    Manage & Edit Users
-                  </button>
-                )}
+                <button
+                  onClick={() => setIsStaffDirectoryOpen(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors font-medium text-stone-300 hover:text-white hover:bg-stone-800 cursor-pointer"
+                >
+                  <Users className="w-4 h-4" />
+                  Manage & Edit Users
+                </button>
               </nav>
-            ) : (
-              /* Navigation for Staff / Requester (Request page only!) */
+            )}
+
+            {/* Navigation: FINANCE (Header of Report & Dashboard only) */}
+            {isFinance && (
+              <nav className="hidden md:flex items-center gap-1 ml-6 border-l border-stone-800 pl-6 text-sm">
+                <button
+                  onClick={() => setActiveTab('dashboard')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors font-medium cursor-pointer ${
+                    activeTab === 'dashboard'
+                      ? 'bg-sky-500/20 text-[#00AEEF]'
+                      : 'text-stone-300 hover:text-white hover:bg-stone-800'
+                  }`}
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('reports')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors font-medium cursor-pointer ${
+                    activeTab === 'reports'
+                      ? 'bg-sky-500/20 text-[#00AEEF]'
+                      : 'text-stone-300 hover:text-white hover:bg-stone-800'
+                  }`}
+                >
+                  <FileText className="w-4 h-4" />
+                  Monthly Report
+                </button>
+              </nav>
+            )}
+
+            {/* Navigation: STORE STAFF (Request Page Only) */}
+            {!isGeneralManager && !isFinance && (
               <div className="hidden md:flex items-center gap-2 ml-6 border-l border-stone-800 pl-6">
                 <div className="bg-sky-950/60 border border-sky-800/60 text-sky-300 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5">
                   <Send className="w-3.5 h-3.5 text-[#00AEEF]" />
@@ -114,8 +166,8 @@ export const Navbar: React.FC = () => {
 
           {/* Right Section */}
           <div className="flex items-center gap-1.5 sm:gap-3">
-            {/* Approved & Pending Money Tracker: Hidden on small mobile screens to keep header uncluttered */}
-            {isManagerOrFinance && (
+            {/* Approved & Pending Money Tracker */}
+            {(isGeneralManager || isFinance) && (
               <div className="hidden md:flex items-center gap-2 bg-stone-800/90 border border-stone-700/80 px-2.5 sm:px-3 py-1.5 rounded-xl">
                 <div className="flex items-center gap-1.5">
                   <span className="relative flex h-2 w-2">
@@ -139,8 +191,20 @@ export const Navbar: React.FC = () => {
               </div>
             )}
 
-            {/* Quick Action: New Requisition Button (compact on mobile) */}
-            {currentUser.role !== 'finance' && (
+            {/* FINANCE: Primary Action = Request Deposit from GM (Finance NEVER requests cash!) */}
+            {isFinance && (
+              <button
+                onClick={() => setIsDepositModalOpen(true)}
+                className="hidden sm:flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm shadow-emerald-950/40 cursor-pointer"
+                title="Finance requests fund deposit / top-up from General Manager"
+              >
+                <Coins className="w-4 h-4" />
+                <span>Request Deposit from GM</span>
+              </button>
+            )}
+
+            {/* GM & STAFF: Request Cash Button */}
+            {!isFinance && (
               <button
                 onClick={() => setIsNewReqModalOpen(true)}
                 className="hidden sm:flex items-center gap-1.5 bg-[#00AEEF] hover:bg-[#0284C7] active:bg-[#0369A1] text-white px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm shadow-sky-900/40 cursor-pointer"
@@ -164,13 +228,10 @@ export const Navbar: React.FC = () => {
                 onClick={() => {
                   setIsProfileDropdownOpen(!isProfileDropdownOpen);
                 }}
-                className="flex items-center gap-2 p-1 rounded-xl hover:bg-stone-800 transition-colors cursor-pointer"
+                className="flex items-center justify-center w-8 h-8 rounded-xl bg-stone-800 hover:bg-stone-700 text-[#00AEEF] border border-[#00AEEF]/40 transition-colors cursor-pointer"
+                title={currentUser.name}
               >
-                <img
-                  src={currentUser.avatarUrl}
-                  alt={currentUser.name}
-                  className="w-8 h-8 rounded-lg object-cover border border-[#00AEEF]/50"
-                />
+                <User className="w-4 h-4" />
               </button>
 
               {isProfileDropdownOpen && (
@@ -184,7 +245,7 @@ export const Navbar: React.FC = () => {
                   </div>
 
                   <div className="py-1 text-xs">
-                    {isManager && (
+                    {isGeneralManager && (
                       <button
                         onClick={() => {
                           setIsStaffDirectoryOpen(true);
