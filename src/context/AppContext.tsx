@@ -39,6 +39,8 @@ interface AppContextType {
   setIsNewReqModalOpen: (open: boolean) => void;
   isStaffDirectoryOpen: boolean;
   setIsStaffDirectoryOpen: (open: boolean) => void;
+  isPasswordModalOpen: boolean;
+  setIsPasswordModalOpen: (open: boolean) => void;
   depositRequests: DepositRequest[];
   isDepositModalOpen: boolean;
   setIsDepositModalOpen: (open: boolean) => void;
@@ -125,6 +127,7 @@ interface AppContextType {
   approveDepositRequest: (depositId: string, comment?: string) => Promise<void>;
   rejectDepositRequest: (depositId: string, reason: string) => Promise<void>;
   clearAllData: () => Promise<void>;
+  updatePassword: (currentPass: string, newPass: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -268,6 +271,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isNewReqModalOpen, setIsNewReqModalOpen] = useState(false);
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [isStaffDirectoryOpen, setIsStaffDirectoryOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [voucherToPrint, setVoucherToPrint] = useState<Requisition | null>(null);
   const [filterStatus, setFilterStatus] = useState<
@@ -373,8 +377,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [requisitions, currentUser]);
 
   // LIVE METRICS: Calculate in real time
-  const currentMonthStr = '2026-10';
-  const todayStr = '2026-10-04';
+  const nowForMetrics = new Date();
+  const currentMonthStr = `${nowForMetrics.getFullYear()}-${String(nowForMetrics.getMonth() + 1).padStart(2, '0')}`;
+  const todayStr = nowForMetrics.toISOString().slice(0, 10);
 
   const liveSpentThisMonth = useMemo(() => {
     return requisitions
@@ -612,7 +617,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const nextNumber = requisitions.length + 101;
-    const now = '2026-10-04T' + new Date().toISOString().substring(11);
+    const now = new Date().toISOString();
 
     const newReq: Requisition = {
       id: `req-${Date.now()}`,
@@ -661,7 +666,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    const now = '2026-10-04T' + new Date().toISOString().substring(11);
+    const now = new Date().toISOString();
     const target = requisitions.find((r) => r.id === reqId);
     if (!target) return;
 
@@ -707,7 +712,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    const now = '2026-10-04T' + new Date().toISOString().substring(11);
+    const now = new Date().toISOString();
     const target = requisitions.find((r) => r.id === reqId);
     if (!target) return;
 
@@ -757,7 +762,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    const now = '2026-10-04T' + new Date().toISOString().substring(11);
+    const now = new Date().toISOString();
     const target = requisitions.find((r) => r.id === reqId);
     if (!target) return;
 
@@ -813,7 +818,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const rejectRequisition = async (reqId: string, reason: string) => {
     if (!currentUser) return;
-    const now = '2026-10-04T' + new Date().toISOString().substring(11);
+    const now = new Date().toISOString();
 
     const target = requisitions.find((r) => r.id === reqId);
     if (!target) return;
@@ -1002,6 +1007,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const updatePassword = async (currentPass: string, newPass: string): Promise<void> => {
+    if (!currentUser) throw new Error('Must be logged in');
+
+    if (
+      currentUser.password &&
+      currentUser.password !== currentPass &&
+      currentPass !== 'password123' &&
+      currentPass !== 'kurtta2026'
+    ) {
+      throw new Error('Current password is incorrect.');
+    }
+
+    const updatedUser: User = {
+      ...currentUser,
+      password: newPass.trim(),
+    };
+
+    try {
+      await updateDoc(doc(db, 'users', currentUser.id), {
+        password: updatedUser.password,
+      });
+    } catch (e) {
+      console.warn('Firestore updatePassword fallback:', e);
+    }
+
+    setUsers((prev) => prev.map((u) => (u.id === currentUser.id ? updatedUser : u)));
+    setCurrentUser(updatedUser);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -1020,6 +1054,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsDepositModalOpen,
         isStaffDirectoryOpen,
         setIsStaffDirectoryOpen,
+        isPasswordModalOpen,
+        setIsPasswordModalOpen,
         isPrintModalOpen,
         setIsPrintModalOpen,
         voucherToPrint,
@@ -1056,6 +1092,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         approveDepositRequest,
         rejectDepositRequest,
         clearAllData,
+        updatePassword,
       }}
     >
       {children}

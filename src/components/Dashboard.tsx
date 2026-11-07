@@ -70,9 +70,10 @@ export const Dashboard: React.FC = () => {
     .slice(0, 4);
 
   // Branch breakdown for this month
+  const currentMonthKey = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
   const branchTotals: Record<string, number> = {};
   requisitions
-    .filter((r) => r.status === 'disbursed' && r.updatedAt.startsWith('2026-10'))
+    .filter((r) => r.status === 'disbursed' && r.updatedAt.startsWith(currentMonthKey))
     .forEach((r) => {
       branchTotals[r.branch] = (branchTotals[r.branch] || 0) + r.amount;
     });

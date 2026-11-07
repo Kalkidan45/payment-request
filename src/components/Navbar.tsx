@@ -14,6 +14,7 @@ import {
   Coins,
   RotateCcw,
   User,
+  KeyRound,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -25,6 +26,7 @@ export const Navbar: React.FC = () => {
     setIsNewReqModalOpen,
     setIsDepositModalOpen,
     setIsStaffDirectoryOpen,
+    setIsPasswordModalOpen,
     clearAllData,
     liveSpentThisMonth,
     committedPendingAmount,
@@ -175,7 +177,7 @@ export const Navbar: React.FC = () => {
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
                   <span className="text-[11px] uppercase tracking-wider text-stone-400 hidden lg:inline">
-                    Approved Oct:
+                    Approved ({new Date().toLocaleString('en-US', { month: 'short' })}):
                   </span>
                 </div>
                 <span className="text-xs sm:text-sm font-bold text-emerald-400 font-mono">
@@ -257,6 +259,17 @@ export const Navbar: React.FC = () => {
                         Staff Management (Create Staff)
                       </button>
                     )}
+
+                    <button
+                      onClick={() => {
+                        setIsPasswordModalOpen(true);
+                        setIsProfileDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-stone-50 flex items-center gap-2 text-stone-700 cursor-pointer"
+                    >
+                      <KeyRound className="w-4 h-4 text-stone-500" />
+                      Change Password
+                    </button>
 
                     <button
                       onClick={() => {

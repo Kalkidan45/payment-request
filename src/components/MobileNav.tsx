@@ -13,6 +13,7 @@ import {
   X,
   ChevronUp,
   Coins,
+  KeyRound,
 } from 'lucide-react';
 import { Role } from '../types';
 import { getRoleDisplay } from '../utils/format';
@@ -24,6 +25,7 @@ export const MobileNav: React.FC = () => {
     setIsNewReqModalOpen,
     setIsDepositModalOpen,
     setIsStaffDirectoryOpen,
+    setIsPasswordModalOpen,
     requisitions,
     currentUser,
     isManagerOrFinance,
@@ -147,6 +149,17 @@ export const MobileNav: React.FC = () => {
                   <span>Manage Staff Directory</span>
                 </button>
               )}
+
+              <button
+                onClick={() => {
+                  setIsPasswordModalOpen(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold p-3 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
+              >
+                <KeyRound className="w-4 h-4 text-stone-600" />
+                <span>Change Password</span>
+              </button>
 
               <button
                 onClick={() => {

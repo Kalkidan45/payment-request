@@ -11,10 +11,11 @@ import { RequisitionDetailModal } from './components/RequisitionDetailModal';
 import { StaffDirectoryModal } from './components/StaffDirectoryModal';
 import { DepositRequestModal } from './components/DepositRequestModal';
 import { PrintVoucherModal } from './components/PrintVoucherModal';
+import { ChangePasswordModal } from './components/ChangePasswordModal';
 import { LoginModal } from './components/LoginModal';
 
 const AppContent: React.FC = () => {
-  const { activeTab, currentUser, isManagerOrFinance } = useApp();
+  const { activeTab, currentUser, isManagerOrFinance, isPasswordModalOpen, setIsPasswordModalOpen } = useApp();
 
   // If user is logged out, show the dedicated login screen
   if (!currentUser) {
@@ -51,6 +52,10 @@ const AppContent: React.FC = () => {
       <StaffDirectoryModal />
       <DepositRequestModal />
       <PrintVoucherModal />
+      <ChangePasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
     </div>
   );
 };

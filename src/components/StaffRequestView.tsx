@@ -9,6 +9,7 @@ import {
   Building2,
   ChevronRight,
   Search,
+  KeyRound,
 } from 'lucide-react';
 
 export const StaffRequestView: React.FC = () => {
@@ -17,6 +18,7 @@ export const StaffRequestView: React.FC = () => {
     myRequisitions,
     setIsNewReqModalOpen,
     setSelectedRequisition,
+    setIsPasswordModalOpen,
   } = useApp();
 
   const [filter, setFilter] = useState<'all' | 'pending' | 'disbursed' | 'rejected'>('all');
@@ -60,9 +62,19 @@ export const StaffRequestView: React.FC = () => {
         <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
         <div className="relative z-10">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[11px] sm:text-xs font-semibold backdrop-blur-xs mb-1.5">
-            <Building2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-            <span className="truncate max-w-[200px]">{currentUser.branch}</span>
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[11px] sm:text-xs font-semibold backdrop-blur-xs">
+              <Building2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span className="truncate max-w-[200px]">{currentUser.branch}</span>
+            </div>
+            <button
+              onClick={() => setIsPasswordModalOpen(true)}
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-[11px] font-medium backdrop-blur-xs transition-colors cursor-pointer"
+              title="Change your login password"
+            >
+              <KeyRound className="w-3 h-3" />
+              <span>Change Password</span>
+            </button>
           </div>
           <h1 className="text-xl sm:text-2xl font-black tracking-tight">
             Selam, {currentUser.name}
