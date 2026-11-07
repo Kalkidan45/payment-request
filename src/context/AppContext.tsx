@@ -175,10 +175,7 @@ const sanitizeUser = (u: any): User => {
     department: u.department || 'Retail Operations',
     branch: sanitizeBranch(u.branch),
     phone: u.phone || '+251 91 000 0000',
-    avatarUrl:
-      u.avatarUrl ||
-      matched?.avatarUrl ||
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    avatarUrl: u.avatarUrl || matched?.avatarUrl || '',
     createdAt: u.createdAt || new Date().toISOString(),
     password: u.password || 'password123',
   };

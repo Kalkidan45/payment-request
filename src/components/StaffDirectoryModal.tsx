@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { getRoleDisplay } from '../utils/format';
 import {
   X,
+  User as UserIcon,
   UserPlus,
   Users,
   Building2,
@@ -669,11 +670,11 @@ export const StaffDirectoryModal: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <img
-                        src={u.avatarUrl}
-                        alt={u.name}
-                        className="w-11 h-11 rounded-xl object-cover border border-stone-200 shadow-xs"
-                      />
+                      <div
+                        className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border ${roleBadge.bg} ${roleBadge.border} ${roleBadge.color} shadow-2xs`}
+                      >
+                        <UserIcon className="w-5 h-5" />
+                      </div>
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="text-sm font-bold text-stone-900">{u.name}</h4>
