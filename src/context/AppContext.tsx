@@ -613,6 +613,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       throw new Error('Finance and General Manager accounts cannot request new cash requisitions. Requisitions are submitted by Store Staff.');
     }
 
+    if (!reqData.amount || reqData.amount <= 0) {
+      throw new Error('Please enter a valid Birr amount.');
+    }
+
+    if (reqData.amount > 1000) {
+      throw new Error('Store requesters are strictly limited to a maximum of 1,000 Birr per request.');
+    }
+
     const nextNumber = requisitions.length + 101;
     const now = new Date().toISOString();
 

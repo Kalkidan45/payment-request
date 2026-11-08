@@ -8,6 +8,9 @@ import {
   Calendar,
   Sparkles,
   CreditCard,
+  AlertCircle,
+  Info,
+  ShieldAlert,
 } from 'lucide-react';
 import { BranchLocation, PaymentMethod, BRANCH_LOCATIONS } from '../types';
 
@@ -15,33 +18,51 @@ export const NewRequisitionModal: React.FC = () => {
   const { isNewReqModalOpen, setIsNewReqModalOpen, createRequisition, currentUser } = useApp();
 
   const [title, setTitle] = useState('');
-  const [amount, setAmount] = useState<number>(1200);
+  const [amount, setAmount] = useState<number>(500);
   const [branch, setBranch] = useState<BranchLocation>(
     currentUser?.branch || 'Shop 1'
   );
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Physical Cash');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   if (!isNewReqModalOpen || !currentUser || currentUser.role === 'finance' || currentUser.role === 'general_manager') return null;
 
-  // Preset quick suggestions for retail stores
+  // Preset quick suggestions for retail stores (strictly adhering to <= 1000 Birr rule)
   const quickSuggestions = [
-    { title: 'Zippers & Organic Cotton Lining for Baby Rompers', amount: 1450 },
-    { title: 'Customer Doorstep Delivery Packages', amount: 450 },
-    { title: 'Kurtta Branded Kraft Paper Shopping Bags', amount: 2400 },
+    { title: 'Zippers & Romper Tailoring Materials', amount: 450 },
+    { title: 'Customer Doorstep Delivery Packages', amount: 350 },
+    { title: 'Kurtta Store Packaging & Paper Bags', amount: 750 },
     { title: 'Hypoallergenic Disinfecting Wipes & Cleaners', amount: 980 },
+    { title: 'Emergency Store Cleaning & Water Supply', amount: 600 },
   ];
 
   const handleApplySuggestion = (sug: typeof quickSuggestions[0]) => {
     setTitle(sug.title);
     setAmount(sug.amount);
+    setErrorMsg('');
+  };
+
+  const handleAmountChange = (val: number) => {
+    setAmount(val);
+    if (val > 1000) {
+      setErrorMsg('Store requisitions are strictly limited to a maximum of 1,000 Birr per request.');
+    } else {
+      setErrorMsg('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg('');
     if (!title.trim() || amount <= 0) {
-      alert('Please fill in purpose title and a valid Birr amount.');
+      setErrorMsg('Please fill in purpose title and a valid Birr amount.');
+      return;
+    }
+
+    if (amount > 1000) {
+      setErrorMsg('Store requisitions are strictly limited to a maximum of 1,000 Birr per request.');
       return;
     }
 
@@ -57,13 +78,18 @@ export const NewRequisitionModal: React.FC = () => {
 
       // Reset form
       setTitle('');
-      setAmount(1200);
+      setAmount(500);
       setDescription('');
+      setErrorMsg('');
       setIsNewReqModalOpen(false);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to submit requisition.');
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const isAmountOverLimit = amount > 1000;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-900/70 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
@@ -76,11 +102,14 @@ export const NewRequisitionModal: React.FC = () => {
               <h2 className="text-sm sm:text-lg font-bold">New Cash Requisition</h2>
             </div>
             <p className="text-[11px] sm:text-xs text-stone-400 mt-0.5">
-              Kurtta Kids Clothes · Expense voucher requisition
+              Kurtta Kids Clothes · Expense voucher requisition (Max 1,000 Br)
             </p>
           </div>
           <button
-            onClick={() => setIsNewReqModalOpen(false)}
+            onClick={() => {
+              setIsNewReqModalOpen(false);
+              setErrorMsg('');
+            }}
             className="p-1.5 rounded-lg text-stone-400 hover:text-white hover:bg-stone-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -105,38 +134,107 @@ export const NewRequisitionModal: React.FC = () => {
           ))}
         </div>
 
+        {/* Policy Limit Alert Banner */}
+        <div className="px-3.5 sm:px-6 pt-3">
+          <div className="p-2.5 bg-sky-50 border border-sky-200 rounded-xl flex items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2 text-sky-800 font-medium">
+              <Info className="w-4 h-4 text-[#00AEEF] shrink-0" />
+              <span><strong>System Policy:</strong> Store requisitions are capped at <strong>1,000 Birr</strong> per request.</span>
+            </div>
+            <span className="text-[10px] font-mono bg-sky-100 text-sky-800 px-2 py-0.5 rounded-md font-bold shrink-0">
+              Limit: 1,000 Br
+            </span>
+          </div>
+        </div>
+
+        {/* Error message if triggered */}
+        {errorMsg && (
+          <div className="px-3.5 sm:px-6 pt-2">
+            <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2 text-xs font-semibold animate-in fade-in">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          </div>
+        )}
+
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-3.5 sm:p-6 space-y-4 overflow-y-auto flex-1">
           {/* Amount in Ethiopian Birr */}
-          <div className="bg-sky-50/70 border border-sky-200 p-3 sm:p-4 rounded-xl sm:rounded-2xl">
-            <label className="block text-[11px] sm:text-xs font-bold text-[#0284C7] uppercase tracking-wider mb-1">
-              Requisition Amount (Ethiopian Birr / ብር) *
-            </label>
+          <div
+            className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl transition-all border ${
+              isAmountOverLimit
+                ? 'bg-rose-50/70 border-rose-300'
+                : 'bg-sky-50/70 border-sky-200'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <label
+                className={`block text-[11px] sm:text-xs font-bold uppercase tracking-wider ${
+                  isAmountOverLimit ? 'text-rose-700' : 'text-[#0284C7]'
+                }`}
+              >
+                Requisition Amount (Ethiopian Birr / ብር) *
+              </label>
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  isAmountOverLimit
+                    ? 'bg-rose-200 text-rose-800'
+                    : 'bg-sky-200/80 text-sky-800'
+                }`}
+              >
+                Max 1,000 Br Limit
+              </span>
+            </div>
+
             <div className="flex items-center gap-2">
-              <span className="text-xl sm:text-2xl font-black text-[#0284C7] font-mono">Br</span>
+              <span
+                className={`text-xl sm:text-2xl font-black font-mono ${
+                  isAmountOverLimit ? 'text-rose-600' : 'text-[#0284C7]'
+                }`}
+              >
+                Br
+              </span>
               <input
                 type="number"
                 min="10"
-                max="50000"
+                max="1000"
                 step="10"
                 required
-                value={amount}
-                onChange={(e) => setAmount(Number(e.target.value))}
-                className="w-full text-2xl sm:text-3xl font-black text-stone-900 bg-transparent border-b-2 border-sky-300 focus:outline-hidden focus:border-[#00AEEF] font-mono py-1"
+                value={amount || ''}
+                onChange={(e) => handleAmountChange(Number(e.target.value))}
+                className={`w-full text-2xl sm:text-3xl font-black bg-transparent border-b-2 font-mono py-1 focus:outline-hidden transition-colors ${
+                  isAmountOverLimit
+                    ? 'text-rose-700 border-rose-400 focus:border-rose-600'
+                    : 'text-stone-900 border-sky-300 focus:border-[#00AEEF]'
+                }`}
                 placeholder="0.00"
               />
             </div>
 
+            {isAmountOverLimit && (
+              <p className="text-xs text-rose-600 font-semibold mt-2 flex items-center gap-1.5">
+                <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+                <span>Amount exceeds allowable limit! Maximum request is 1,000 Birr.</span>
+              </p>
+            )}
+
             {/* Quick amount increment pills */}
             <div className="flex items-center gap-1.5 mt-2.5 overflow-x-auto no-scrollbar py-0.5">
-              {[250, 500, 1000, 2000, 3500].map((inc) => (
+              {[100, 250, 500, 750, 1000].map((inc) => (
                 <button
                   key={inc}
                   type="button"
-                  onClick={() => setAmount(inc)}
-                  className="bg-white hover:bg-sky-100 active:scale-95 border border-sky-200 text-[#0284C7] text-xs font-semibold px-2.5 py-1 rounded-md transition-all cursor-pointer shrink-0"
+                  onClick={() => {
+                    setAmount(inc);
+                    setErrorMsg('');
+                  }}
+                  className={`border text-xs font-semibold px-2.5 py-1 rounded-md transition-all cursor-pointer shrink-0 active:scale-95 ${
+                    amount === inc
+                      ? 'bg-[#00AEEF] text-white border-[#00AEEF] shadow-xs'
+                      : 'bg-white hover:bg-sky-100 border-sky-200 text-[#0284C7]'
+                  }`}
                 >
-                  +{inc}
+                  {inc === 1000 ? 'Max (1,000 Br)' : `${inc} Br`}
                 </button>
               ))}
             </div>
@@ -211,11 +309,19 @@ export const NewRequisitionModal: React.FC = () => {
           <div className="pt-2">
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-[#00AEEF] hover:bg-[#0284C7] active:bg-[#0369A1] text-white font-bold py-3 px-4 rounded-xl text-sm transition-all shadow-md shadow-sky-900/30 flex items-center justify-center gap-2 cursor-pointer min-h-[48px] active:scale-98"
+              disabled={isSubmitting || amount <= 0 || isAmountOverLimit}
+              className={`w-full font-bold py-3 px-4 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer min-h-[48px] ${
+                isAmountOverLimit
+                  ? 'bg-rose-500 text-white cursor-not-allowed opacity-90'
+                  : 'bg-[#00AEEF] hover:bg-[#0284C7] active:bg-[#0369A1] text-white shadow-sky-900/30 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed'
+              }`}
             >
               <FileCheck className="w-4 h-4" />
-              <span>Submit Requisition for Approval ({formatBirr(amount)})</span>
+              <span>
+                {isAmountOverLimit
+                  ? 'Amount Exceeds 1,000 Birr Limit'
+                  : `Submit Requisition for Approval (${formatBirr(amount)})`}
+              </span>
             </button>
           </div>
         </form>

@@ -80,7 +80,7 @@ export const StaffRequestView: React.FC = () => {
             Selam, {currentUser.name}
           </h1>
           <p className="text-xs text-sky-100 mt-0.5">
-            Kurtta Staff Portal · {currentUser.roleTitle}
+            Kurtta Staff Portal · {currentUser.roleTitle} · Max 1,000 Br per request
           </p>
         </div>
 
